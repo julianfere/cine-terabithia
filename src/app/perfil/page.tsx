@@ -10,8 +10,9 @@ export default async function PerfilPage() {
   if (!session?.user?.name) redirect('/');
 
   const db = getDb();
-  const user = db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar })
-    .from(users).where(eq(users.username, session.user.name)).get();
+  const rows = await db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar })
+    .from(users).where(eq(users.username, session.user.name)).limit(1);
+  const user = rows[0];
 
   if (!user) redirect('/');
 
