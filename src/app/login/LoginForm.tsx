@@ -21,8 +21,7 @@ export default function LoginForm() {
     if (result?.error) {
       setError('Usuario o contraseña incorrectos.');
     } else {
-      router.push(callbackUrl);
-      router.refresh();
+      window.location.href = callbackUrl;
     }
   };
 
