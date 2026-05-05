@@ -64,34 +64,33 @@ export default function LoginForm() {
       {/* Card */}
       <div style={{ width: '100%', maxWidth: 360, background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
 
-        {/* Segmented control */}
-        <div style={{ display: 'flex', padding: '16px 20px 0' }}>
-          <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 8, padding: 3, gap: 2, width: '100%' }}>
-            {(['login', 'register'] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => switchMode(m)}
-                style={{
-                  flex: 1,
-                  padding: '7px 0',
-                  background: mode === m ? 'var(--accent)' : 'transparent',
-                  color: mode === m ? '#fff' : 'var(--ink-mute)',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-              >
-                {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
-              </button>
-            ))}
-          </div>
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--line)' }}>
+          {(['login', 'register'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              style={{
+                flex: 1,
+                padding: '16px 0 14px',
+                background: 'transparent',
+                color: mode === m ? 'var(--ink)' : 'var(--ink-mute)',
+                border: 'none',
+                borderBottom: mode === m ? '2px solid var(--accent)' : '2px solid transparent',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                transition: 'color 0.15s, border-color 0.15s',
+                marginBottom: -1,
+              }}
+            >
+              {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
+            </button>
+          ))}
         </div>
 
         {/* Form */}
