@@ -1,116 +1,102 @@
 import type { ScreeningRow } from '@/lib/data';
 
-function formatTicketDate(d: string) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+function Barcode({ count = 30 }: { count?: number }) {
+  return (
+    <div style={{ display: 'flex', gap: '1.5px', alignItems: 'flex-end', height: 18 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <span
+          key={i}
+          style={{
+            display: 'block',
+            width: i % 7 === 0 ? 3 : 1.5,
+            background: '#0F1216',
+            height: i % 3 === 0 ? '60%' : i % 5 === 0 ? '80%' : '100%',
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
-export function Ticket({ screening, username }: { screening: ScreeningRow; username: string }) {
-  const ticketNum = String(screening.id).padStart(4, '0');
+function ticketInitials(username: string): string {
+  return username
+    .split(/[\s_&@]+/)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('')
+    .slice(0, 3) || username.slice(0, 2).toUpperCase();
+}
+
+export function Ticket({ screening, username, animate }: { screening: ScreeningRow; username: string; animate?: boolean }) {
+  const ticketNum = screening.id;
+  const initials = ticketInitials(username);
+
+  const dateStr = screening.scheduledDate
+    ? new Date(screening.scheduledDate + 'T00:00:00').toLocaleDateString('es-AR', {
+        weekday: 'short', day: 'numeric', month: 'short',
+      })
+    : '—';
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 72px',
-      background: 'var(--bg-card)',
-      border: '1px solid var(--line)',
-      borderLeft: '4px solid var(--accent)',
-      borderRadius: 'var(--radius)',
-      overflow: 'hidden',
-      maxWidth: 540,
-      userSelect: 'none',
-    }}>
-      {/* Cuerpo principal */}
-      <div style={{ padding: '20px 24px', borderRight: '2px dashed var(--line)' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>
-          Entrada · Cine Club
-        </div>
-        <div style={{ fontWeight: 800, fontSize: 20, textTransform: 'uppercase', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 14 }}>
-          {screening.title}
-          {screening.year && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 400, fontSize: 13, color: 'var(--ink-mute)', marginLeft: 8, textTransform: 'none' }}>
-              &apos;{String(screening.year).slice(2)}
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)' }}>
-            <span style={{ color: 'var(--ink-dim)', marginRight: 6 }}>FECHA</span>
-            {formatTicketDate(screening.scheduledDate)}
+    <div className={`ticket-card${animate ? ' ticket-reveal' : ''}`}>
+      <div className="ticket-stub">
+        <div className="ticket-main">
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 600, opacity: 0.7 }}>
+            CINE TERABITHIA · ADMIT ONE
           </div>
-          {screening.hour && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)' }}>
-              <span style={{ color: 'var(--ink-dim)', marginRight: 6 }}>HORA</span>
-              {screening.hour}
+          <h3 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1.1, margin: '6px 0 4px', textTransform: 'uppercase' }}>
+            {screening.title ?? 'Próxima función'}
+            {screening.year && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontStyle: 'normal', fontWeight: 500, fontSize: 13, opacity: 0.7, marginLeft: 6, letterSpacing: '0.04em', textTransform: 'none' }}>
+                &apos;{String(screening.year).slice(2)}
+              </span>
+            )}
+          </h3>
+          {screening.synopsis && (
+            <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 12, lineHeight: 1.3, opacity: 0.85, margin: '6px 0 12px', maxWidth: 320 }}>
+              &ldquo;{screening.synopsis.slice(0, 80)}{screening.synopsis.length > 80 ? '…' : ''}&rdquo;
             </div>
           )}
-          {screening.location && (
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)' }}>
-              <span style={{ color: 'var(--ink-dim)', marginRight: 6 }}>LUGAR</span>
-              {screening.location}
+          <div style={{ display: 'flex', gap: 20, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 500 }}>
+            <div>
+              <div style={{ opacity: 0.65, fontSize: 8, marginBottom: 2 }}>FECHA</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-sans)' }}>{dateStr}</div>
             </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)' }}>
-            <span style={{ color: 'var(--ink-dim)', marginRight: 6 }}>PARA</span>
-            {username}
+            {screening.hour && (
+              <div>
+                <div style={{ opacity: 0.65, fontSize: 8, marginBottom: 2 }}>HORA</div>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-sans)' }}>{screening.hour}</div>
+              </div>
+            )}
+            {screening.location && (
+              <div>
+                <div style={{ opacity: 0.65, fontSize: 8, marginBottom: 2 }}>SALA</div>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', fontFamily: 'var(--font-sans)' }}>{screening.location}</div>
+              </div>
+            )}
           </div>
-          <span style={{
-            background: 'var(--accent)',
-            color: 'var(--bg)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 9,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            padding: '3px 8px',
-            borderRadius: 'var(--radius-sm)',
-          }}>
-            Confirmada
-          </span>
+        </div>
+
+        <div className="ticket-side">
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', fontWeight: 600, opacity: 0.7 }}>
+            N° {ticketNum}
+          </div>
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em' }}>{initials}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', fontWeight: 500, opacity: 0.65, textTransform: 'uppercase', marginTop: 2 }}>
+              {username.slice(0, 10)}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Talón */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 16,
-        padding: '16px 0',
-        background: 'var(--bg-elev)',
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 10,
-          fontWeight: 700,
-          color: 'var(--accent)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.12em',
-          writingMode: 'vertical-rl',
-          textOrientation: 'mixed',
-          transform: 'rotate(180deg)',
-        }}>
-          Válida
-        </span>
-        <div style={{
-          width: 36,
-          height: 36,
-          border: '2px solid var(--line)',
-          borderRadius: 4,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 2,
-          padding: 4,
-        }}>
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} style={{ background: i % 3 === 0 || i % 5 === 0 ? 'var(--ink-dim)' : 'transparent', borderRadius: 1 }} />
-          ))}
+      <div className="ticket-bar">
+        <Barcode />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 14, height: 14, background: '#0F1216', color: 'var(--accent)', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 9, flexShrink: 0 }}>
+            ✓
+          </span>
+          CT-2026-{String(ticketNum).padStart(3, '0')}
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-dim)', letterSpacing: '0.04em' }}>
-          #{ticketNum}
-        </span>
       </div>
     </div>
   );

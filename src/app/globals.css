@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap');
 
 :root {
   --bg: #14181C;
@@ -25,6 +25,7 @@
 
   --font-sans: 'Inter Tight', system-ui, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, monospace;
+  --font-serif: 'Instrument Serif', serif;
 }
 
 * {
@@ -581,4 +582,306 @@ textarea::placeholder {
   padding: 32px;
   max-width: 420px;
   width: 100%;
+}
+
+/* ─── TICKET CARD ─── */
+.ticket-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
+  user-select: none;
+}
+
+.ticket-stub {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+}
+
+.ticket-main {
+  padding: 22px 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, #c44b08 100%);
+  color: #0F1216;
+  position: relative;
+}
+
+.ticket-main::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.ticket-main::after {
+  content: "";
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.ticket-side {
+  background: var(--accent);
+  color: #0F1216;
+  border-left: 2px dashed rgba(15,18,22,.2);
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+}
+
+.ticket-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-top: 1px dashed rgba(15,18,22,.25);
+  background: var(--accent);
+  color: #0F1216;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+@keyframes ticket-reveal {
+  0% { opacity: 0; transform: translateY(20px) scale(0.96); filter: blur(6px); }
+  60% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+.ticket-reveal {
+  animation: ticket-reveal 0.55s cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* ─── MINI TICKET (tickets page) ─── */
+.tk-mini {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  overflow: hidden;
+  transition: transform 0.15s, border-color 0.15s;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tk-mini:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-soft);
+}
+
+.tk-mini.future {
+  border-color: var(--accent);
+}
+
+.tk-mini-date {
+  background: var(--bg-elev);
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 14px 8px;
+  border-right: 2px dashed var(--line);
+}
+
+.tk-mini-date::before,
+.tk-mini-date::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.tk-mini-date::before { top: -9px; }
+.tk-mini-date::after { bottom: -9px; }
+
+.tk-mini-body {
+  padding: 14px 16px;
+  min-width: 0;
+}
+
+.tk-mini-side {
+  background: var(--accent);
+  color: #0F1216;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 8px 6px;
+}
+
+.tk-mini-side.past {
+  background: var(--bg-elev);
+  color: var(--ink-mute);
+}
+
+/* ─── PROFILE DROPDOWN ─── */
+.profile-wrap {
+  position: relative;
+}
+
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.profile-trigger:hover,
+.profile-wrap.open .profile-trigger {
+  background: var(--bg-elev);
+  border-color: var(--line);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  z-index: 60;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0s 0.15s;
+}
+
+.profile-wrap.open .profile-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.pm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  transition: background 0.1s, color 0.1s;
+  box-sizing: border-box;
+}
+
+.pm-item:hover {
+  background: var(--bg-elev);
+  color: var(--ink);
+}
+
+.pm-item.danger {
+  color: var(--ink-mute);
+}
+
+.pm-item.danger:hover {
+  color: var(--hot);
+  background: rgba(255, 90, 95, 0.08);
+}
+
+.pm-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 6px 4px;
+}
+
+/* ─── RSVP CARD ─── */
+.rsvp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.rsvp-card-head {
+  padding: 12px 18px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ─── ATTEND CHIPS ─── */
+.attend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px 4px 4px;
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.attend-chip.you {
+  border-color: var(--accent);
+  background: rgba(228, 98, 23, 0.12);
+  color: var(--accent);
+}
+
+/* ─── DETAIL 3-COL GRID (upcoming) ─── */
+.detalle-rsvp-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr 340px;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 1100px) {
+  .detalle-rsvp-grid {
+    grid-template-columns: 260px 1fr;
+  }
+  .detalle-rsvp-grid .rsvp-col {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .detalle-rsvp-grid {
+    grid-template-columns: 1fr;
+  }
 }

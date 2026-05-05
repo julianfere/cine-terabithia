@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { movies, screenings, scores, recommendations, recommendationVotes, attendances, users } from '@/db/schema';
-import { eq, desc, avg, count, asc } from 'drizzle-orm';
+import { eq, desc, avg, count, asc, and } from 'drizzle-orm';
 import type { ProfilesMap } from './profiles';
 
 export type ScreeningRow = {
@@ -151,4 +151,50 @@ export async function getRecommendations(): Promise<RecommendationRow[]> {
   return rows
     .map((r) => ({ ...r, votes: voteMap.get(r.id) ?? 0 }))
     .sort((a, b) => b.votes - a.votes) as RecommendationRow[];
+}
+
+export type AttendedScreeningRow = ScreeningRow & { userScore: number | null; userComment: string | null };
+
+export async function getAttendedScreeningsForUser(username: string): Promise<AttendedScreeningRow[]> {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      id: screenings.id,
+      movieId: screenings.movieId,
+      scheduledDate: screenings.scheduledDate,
+      hour: screenings.hour,
+      status: screenings.status,
+      snack: screenings.snack,
+      location: screenings.location,
+      curatedBy: screenings.curatedBy,
+      notes: screenings.notes,
+      title: movies.title,
+      year: movies.year,
+      director: movies.director,
+      genre: movies.genre,
+      posterHue: movies.posterHue,
+      posterPath: movies.posterPath,
+      duration: movies.duration,
+      synopsis: movies.synopsis,
+    })
+    .from(screenings)
+    .innerJoin(attendances, and(eq(screenings.id, attendances.screeningId), eq(attendances.username, username)))
+    .leftJoin(movies, eq(screenings.movieId, movies.id))
+    .orderBy(desc(screenings.scheduledDate));
+
+  const withAvgScores = await attachAvgScores(rows);
+
+  const userScoreRows = await db
+    .select({ screeningId: scores.screeningId, score: scores.score, comment: scores.comment })
+    .from(scores)
+    .where(eq(scores.username, username));
+
+  const scoreMap = new Map(userScoreRows.map((s) => [s.screeningId, { score: s.score, comment: s.comment }]));
+
+  return withAvgScores.map((r) => ({
+    ...r,
+    userScore: scoreMap.get(r.id)?.score ?? null,
+    userComment: scoreMap.get(r.id)?.comment ?? null,
+  }));
 }
