@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 export default function LoginForm() {
-  const router = useRouter();
   const params = useSearchParams();
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,6 +15,21 @@ export default function LoginForm() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    if (mode === 'register') {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLoading(false);
+        setError(data.error ?? 'Error al registrarse.');
+        return;
+      }
+    }
+
     const callbackUrl = params.get('callbackUrl') ?? '/';
     const result = await signIn('credentials', { username, password, redirect: false });
     setLoading(false);
@@ -24,6 +39,13 @@ export default function LoginForm() {
       window.location.href = callbackUrl;
     }
   };
+
+  const switchMode = (m: 'login' | 'register') => {
+    setMode(m);
+    setError('');
+  };
+
+  const inputStyle = { width: '100%', boxSizing: 'border-box' as const, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -39,44 +61,72 @@ export default function LoginForm() {
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>Acceso al club</div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 380, background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: 32 }}>
-        <div className="eyebrow" style={{ marginBottom: 6 }}>Identificate</div>
-        <h2 style={{ margin: '0 0 28px', fontWeight: 800, fontSize: 26 }}>Iniciar sesión</h2>
-
-        <div style={{ marginBottom: 16 }}>
-          <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Usuario</label>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Tu apodo"
-            required
-            autoFocus
-            style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' }}
-          />
+      <div style={{ width: '100%', maxWidth: 380 }}>
+        {/* Toggle */}
+        <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: 0 }}>
+          {(['login', 'register'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              style={{
+                flex: 1,
+                padding: '11px 0',
+                background: mode === m ? 'var(--accent)' : 'transparent',
+                color: mode === m ? 'var(--bg)' : 'var(--ink-mute)',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
+            </button>
+          ))}
         </div>
 
-        <div style={{ marginBottom: 24 }}>
-          <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Contraseña</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' }}
-          />
-        </div>
-
-        {error && (
-          <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(255,90,95,0.12)', border: '1px solid var(--hot)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--hot)' }}>
-            {error}
+        <form onSubmit={handleSubmit} style={{ background: 'var(--bg-card)', border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', padding: 32 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Usuario</label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Tu apodo"
+              required
+              autoFocus
+              style={inputStyle}
+            />
           </div>
-        )}
 
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
-          {loading ? 'Entrando…' : 'Entrar'}
-        </button>
-      </form>
+          <div style={{ marginBottom: 24 }}>
+            <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Contraseña</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              style={inputStyle}
+            />
+          </div>
+
+          {error && (
+            <div style={{ marginBottom: 16, padding: '10px 12px', background: 'rgba(255,90,95,0.12)', border: '1px solid var(--hot)', borderRadius: 'var(--radius-sm)', fontSize: 13, color: 'var(--hot)' }}>
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', display: 'flex' }}>
+            {loading
+              ? (mode === 'login' ? 'Entrando…' : 'Registrando…')
+              : (mode === 'login' ? 'Entrar' : 'Crear cuenta')}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
