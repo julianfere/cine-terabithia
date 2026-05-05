@@ -8,7 +8,7 @@ const globalForDb = global as unknown as {
 
 export function getDb() {
   if (!globalForDb._db) {
-    const client = postgres(process.env.DATABASE_URL!, { ssl: { rejectUnauthorized: false }, max: 1, prepare: false });
+    const client = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false });
     globalForDb._db = drizzle(client, { schema });
   }
   return globalForDb._db!;
