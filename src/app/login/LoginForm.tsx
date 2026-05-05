@@ -29,7 +29,13 @@ export default function LoginForm() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
-        <div className="logo-mark" style={{ margin: '0 auto 12px', width: 36, height: 36 }} />
+        <svg viewBox="0 0 100 100" style={{ width: 56, height: 56, margin: '0 auto 14px', display: 'block' }}>
+          <rect width="100" height="100" rx="20" fill="#E46217"/>
+          <path d="M 16 32 H 84 V 48 a6 6 0 0 0 0 12 V 76 H 16 V 60 a6 6 0 0 0 0 -12 Z" fill="#14181C"/>
+          <line x1="56" y1="36" x2="56" y2="72" stroke="#E46217" strokeWidth="1.5" strokeDasharray="2.5 2.5"/>
+          <text x="36" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="11" fill="#E46217" letterSpacing="1">CT</text>
+          <text x="71" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="9" fill="#E46217">048</text>
+        </svg>
         <div style={{ fontWeight: 800, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cine Terabithia</div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>Acceso al club</div>
       </div>
