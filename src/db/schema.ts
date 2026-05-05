@@ -68,6 +68,13 @@ export const screeningVotes = pgTable('screening_votes', {
   createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
+export const attendances = pgTable('attendances', {
+  id: serial('id').primaryKey(),
+  screeningId: integer('screening_id').references(() => screenings.id),
+  username: text('username').notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
+});
+
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   username: text('username').notNull().unique(),

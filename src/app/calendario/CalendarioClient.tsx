@@ -78,7 +78,7 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
             const { mes, dia } = formatMonthDay(f.scheduledDate);
             return (
               <Link key={f.id} href={`/funciones/${f.id}`} className="poster-link">
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
                   <Poster label={f.title ? f.title.toUpperCase() : 'POR VOTAR'} hue={f.posterHue ?? 120} posterPath={f.posterPath} />
                   <div style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '3px 7px', borderRadius: 3, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: 'var(--ink)' }}>
                     {mes.toUpperCase()} {dia}
@@ -94,8 +94,8 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
                     </div>
                   )}
                 </div>
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, lineHeight: 1.2, marginBottom: 2 }}>
+                <div style={{ marginTop: 10, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
                     {f.title ?? <span style={{ color: 'var(--ink-mute)', fontStyle: 'italic', fontWeight: 400 }}>Por votar</span>}
                     {f.title && (
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>
@@ -104,9 +104,8 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
                     )}
                   </div>
                   {f.curatedBy && (
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ flexShrink: 0, marginTop: 1 }}>
                       <Avatar {...resolveUser(profiles, f.curatedBy)} size="sm" />
-                      <span>{resolveUser(profiles, f.curatedBy).name.toLowerCase()}</span>
                     </div>
                   )}
                 </div>

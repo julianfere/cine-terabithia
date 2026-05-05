@@ -14,7 +14,6 @@ export function Poster({ label, hue, posterPath }: PosterProps) {
           alt={label}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
         />
-        <div className="poster-label" style={{ position: 'relative', zIndex: 1 }}>{label}</div>
       </div>
     );
   }

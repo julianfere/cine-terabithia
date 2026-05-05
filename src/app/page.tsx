@@ -61,7 +61,7 @@ export default async function Home() {
             Todavía no hay funciones programadas. El admin puede crear la primera desde el panel.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="/watchlist" className="btn btn-primary">Ver watchlist →</a>
+            <a href="/watchlist" className="btn btn-primary">Ver sugeridos →</a>
             <a href="/votacion" className="btn btn-ghost">Votar próxima película</a>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default async function Home() {
                 {[
                   ['Funciones', totalFunciones],
                   ['Puntajes registrados', totalScores],
-                  ['En la watchlist', recs.length],
+                  ['Sugeridos', recs.length],
                 ].map(([label, value]) => (
                   <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '6px 0', borderBottom: '1px dashed var(--line)' }}>
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>{label}</span>
@@ -255,8 +255,8 @@ export default async function Home() {
       {topRec && (
         <section>
           <SectionHeader
-            eyebrow={`${recs.length} en la watchlist`}
-            title={<>En la <em>watchlist</em></>}
+            eyebrow={`${recs.length} sugeridos`}
+            title={<>Películas <em>sugeridas</em></>}
             action={
               <Link href="/watchlist" className="btn btn-ghost btn-sm">
                 Ver toda la cola →

@@ -11,7 +11,7 @@ type MyProfile = { displayName: string | null; avatar: string | null } | null;
 const links = [
   ['/', 'Próxima'],
   ['/calendario', 'Calendario'],
-  ['/watchlist', 'Watchlist'],
+  ['/watchlist', 'Sugeridos'],
   ['/votacion', 'Votación'],
   ['/ranking', 'Ranking'],
 ] as const;

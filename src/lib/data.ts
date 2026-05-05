@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { movies, screenings, scores, recommendations, recommendationVotes, users } from '@/db/schema';
+import { movies, screenings, scores, recommendations, recommendationVotes, attendances, users } from '@/db/schema';
 import { eq, desc, avg, count, asc } from 'drizzle-orm';
 import type { ProfilesMap } from './profiles';
 
@@ -122,6 +122,22 @@ export async function getUserProfiles(): Promise<ProfilesMap> {
   const map: ProfilesMap = {};
   for (const u of rows) map[u.username] = { displayName: u.displayName ?? null, avatar: u.avatar ?? null };
   return map;
+}
+
+export async function getAttendanceForScreening(screeningId: number): Promise<{ username: string }[]> {
+  const db = getDb();
+  return db.select({ username: attendances.username })
+    .from(attendances)
+    .where(eq(attendances.screeningId, screeningId));
+}
+
+export async function getUserRecommendationVotes(username: string): Promise<number[]> {
+  const db = getDb();
+  const rows = await db
+    .select({ id: recommendationVotes.recommendationId })
+    .from(recommendationVotes)
+    .where(eq(recommendationVotes.username, username));
+  return rows.map((r) => r.id).filter((id): id is number => id !== null);
 }
 
 export async function getRecommendations(): Promise<RecommendationRow[]> {

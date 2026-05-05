@@ -11,10 +11,10 @@ import { useProfiles, resolveUser } from '@/lib/useProfiles';
 type NewRec = { title: string; year: string; director: string; genre: string; duration: string; why: string; posterPath: string | null; tmdbId: number | null };
 const emptyRec = (): NewRec => ({ title: '', year: '', director: '', genre: '', duration: '', why: '', posterPath: null, tmdbId: null });
 
-export default function WatchlistClient({ initialRecs, username }: { initialRecs: RecommendationRow[]; username: string | null }) {
+export default function WatchlistClient({ initialRecs, username, initialVotedIds }: { initialRecs: RecommendationRow[]; username: string | null; initialVotedIds: number[] }) {
   const [recs, setRecs] = useState(initialRecs);
   const profiles = useProfiles();
-  const [votedIds, setVotedIds] = useState<Set<number>>(new Set());
+  const [votedIds, setVotedIds] = useState<Set<number>>(new Set(initialVotedIds));
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
   const [newRec, setNewRec] = useState<NewRec>(emptyRec());
@@ -82,7 +82,7 @@ export default function WatchlistClient({ initialRecs, username }: { initialRecs
     <div className="page-enter shell" style={{ paddingTop: 32 }}>
       <SectionHeader
         eyebrow={`${recs.length} películas en la cola`}
-        title={<>Watchlist <em>compartida</em></>}
+        title={<>Sugeridos <em>por el club</em></>}
         action={username ? <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Recomendar</button> : undefined}
       />
 
@@ -130,7 +130,7 @@ export default function WatchlistClient({ initialRecs, username }: { initialRecs
       {sorted.length === 0 && (
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="eyebrow" style={{ marginBottom: 8 }}>
-            {filter === 'mine' ? 'Todavía no sugeriste ninguna película' : 'La watchlist está vacía'}
+            {filter === 'mine' ? 'Todavía no sugeriste ninguna película' : 'No hay sugerencias todavía'}
           </div>
           <p style={{ color: 'var(--ink-mute)', margin: '0 0 20px' }}>
             {filter === 'mine' ? 'Usá el botón "Recomendar" para agregar tu primera sugerencia.' : 'Sé el primero en recomendar una película al club.'}

@@ -6,6 +6,7 @@ import { Poster } from '@/components/Poster';
 import { Stars } from '@/components/Stars';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Avatar } from '@/components/Avatar';
+import { Ticket } from '@/components/Ticket';
 import { useProfiles, resolveUser } from '@/lib/useProfiles';
 
 type Score = { id: number; username: string; score: number; comment: string | null; createdAt: number | null };
@@ -15,13 +16,16 @@ function formatDate(d: string) {
   return date.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-export default function DetalleClient({ screening, scores: initialScores, username }: { screening: ScreeningRow; scores: Score[]; username: string | null }) {
+export default function DetalleClient({ screening, scores: initialScores, username, initialAttendance }: { screening: ScreeningRow; scores: Score[]; username: string | null; initialAttendance: { username: string }[] }) {
   const [scores, setScores] = useState(initialScores);
   const [filterStar, setFilterStar] = useState<number | null>(null);
   const profiles = useProfiles();
-  const [myRating, setMyRating] = useState(0);
-  const [myComment, setMyComment] = useState('');
+  const initialMyScore = username ? initialScores.find((s) => s.username === username) : null;
+  const [myRating, setMyRating] = useState(initialMyScore?.score ?? 0);
+  const [myComment, setMyComment] = useState(initialMyScore?.comment ?? '');
   const [publishing, setPublishing] = useState(false);
+  const [attendance, setAttendance] = useState(initialAttendance);
+  const isGoing = username ? attendance.some((a) => a.username === username) : false;
 
   const avg = scores.length ? scores.reduce((s, r) => s + r.score, 0) / scores.length : 0;
   const distribution = [5, 4, 3, 2, 1].map((s) => ({
@@ -31,6 +35,17 @@ export default function DetalleClient({ screening, scores: initialScores, userna
   const maxCount = Math.max(...distribution.map((d) => d.count), 1);
   const filtered = filterStar ? scores.filter((r) => r.score === filterStar) : scores;
   const myScore = username ? scores.find((s) => s.username === username) : null;
+
+  const handleRsvp = async () => {
+    if (!username) return;
+    const res = await fetch(`/api/screenings/${screening.id}/attendance`, { method: 'POST' });
+    if (res.ok) {
+      const { attending } = await res.json();
+      setAttendance((prev) =>
+        attending ? [...prev, { username }] : prev.filter((a) => a.username !== username)
+      );
+    }
+  };
 
   const handlePublish = async () => {
     if (!username || !myRating) return;
@@ -47,8 +62,8 @@ export default function DetalleClient({ screening, scores: initialScores, userna
         if (idx >= 0) { const next = [...prev]; next[idx] = updated; return next; }
         return [...prev, updated];
       });
-      setMyRating(0);
-      setMyComment('');
+      setMyRating(updated.score);
+      setMyComment(updated.comment ?? '');
     }
     setPublishing(false);
   };
@@ -145,7 +160,7 @@ export default function DetalleClient({ screening, scores: initialScores, userna
           <input
             value={myComment}
             onChange={(e) => setMyComment(e.target.value)}
-            placeholder={myScore?.comment ? myScore.comment : '¿Qué te pareció?'}
+            placeholder="¿Qué te pareció?"
             style={{ width: '100%', background: 'transparent', border: 'none', borderBottom: '1.5px solid var(--line)', fontSize: 18, color: 'var(--ink)', padding: '8px 0', outline: 'none' }}
           />
           <button className="btn btn-primary" disabled={!myRating || publishing} onClick={handlePublish}>
@@ -188,9 +203,58 @@ export default function DetalleClient({ screening, scores: initialScores, userna
       )}
 
       {screening.status === 'upcoming' && screening.title && (
-        <div className="card" style={{ padding: 32, textAlign: 'center' }}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>Función próxima</div>
-          <p style={{ color: 'var(--ink-soft)', fontSize: 16, margin: 0 }}>Los puntajes y comentarios estarán disponibles después de la función.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 40 }}>
+          {/* RSVP */}
+          <div className="card" style={{ padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>¿Vas a la función?</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {attendance.slice(0, 8).map((a) => (
+                    <Avatar key={a.username} {...resolveUser(profiles, a.username)} size="sm" />
+                  ))}
+                  {attendance.length > 0 && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>
+                      {attendance.length} {attendance.length === 1 ? 'confirmado' : 'confirmados'}
+                    </span>
+                  )}
+                  {attendance.length === 0 && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-dim)' }}>
+                      Nadie confirmó todavía
+                    </span>
+                  )}
+                </div>
+              </div>
+              {username ? (
+                <button
+                  onClick={handleRsvp}
+                  style={{
+                    background: isGoing ? 'transparent' : 'var(--accent)',
+                    color: isGoing ? 'var(--ink-mute)' : 'var(--bg)',
+                    border: isGoing ? '1px solid var(--line)' : '1px solid var(--accent)',
+                    padding: '10px 20px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontFamily: 'var(--font-sans)',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {isGoing ? '✕ Cancelar asistencia' : '✓ Confirmar asistencia'}
+                </button>
+              ) : (
+                <Link href="/login" className="btn btn-primary">Iniciar sesión para confirmar</Link>
+              )}
+            </div>
+          </div>
+
+          {/* Entradita virtual */}
+          {isGoing && username && <Ticket screening={screening} username={username} />}
+
+          <div className="card" style={{ padding: 24, textAlign: 'center' }}>
+            <p style={{ color: 'var(--ink-soft)', fontSize: 15, margin: 0 }}>Los puntajes y comentarios estarán disponibles después de la función.</p>
+          </div>
         </div>
       )}
       {screening.status === 'upcoming' && !screening.title && (

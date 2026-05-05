@@ -167,9 +167,9 @@ export default function VotacionClient({ screening, candidates: initialCandidate
         <div className="card" style={{ padding: 48, textAlign: 'center' }}>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Sin candidatas aún</div>
           <p style={{ color: 'var(--ink-mute)', margin: '0 0 20px' }}>
-            Agregá películas a la watchlist para poder votar la próxima función.
+            Sugerí películas para poder votar la próxima función.
           </p>
-          <a href="/watchlist" className="btn btn-primary btn-sm">Ir a la watchlist →</a>
+          <a href="/watchlist" className="btn btn-primary btn-sm">Ir a sugeridos →</a>
         </div>
       )}
 
