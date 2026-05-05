@@ -11,11 +11,11 @@ export async function GET() {
   if (!username) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const db = getDb();
-  const user = db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar, role: users.role })
-    .from(users).where(eq(users.username, username)).get();
+  const rows = await db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar, role: users.role })
+    .from(users).where(eq(users.username, username)).limit(1);
 
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(user);
+  if (!rows[0]) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  return NextResponse.json(rows[0]);
 }
 
 export async function PATCH(req: NextRequest) {
@@ -41,10 +41,10 @@ export async function PATCH(req: NextRequest) {
 
   if (Object.keys(updates).length === 0) return NextResponse.json({ ok: true });
 
-  db.update(users).set(updates).where(eq(users.username, username)).run();
+  await db.update(users).set(updates).where(eq(users.username, username));
 
-  const updated = db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar })
-    .from(users).where(eq(users.username, username)).get();
+  const updated = await db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar })
+    .from(users).where(eq(users.username, username)).limit(1);
 
-  return NextResponse.json(updated);
+  return NextResponse.json(updated[0]);
 }

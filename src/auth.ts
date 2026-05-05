@@ -24,7 +24,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!username || !password) return null;
 
         const db = getDb();
-        const user = db.select().from(users).where(eq(users.username, username)).get();
+        const rows = await db.select().from(users).where(eq(users.username, username)).limit(1);
+        const user = rows[0];
         if (!user) return null;
 
         const valid = await bcrypt.compare(password, user.password);

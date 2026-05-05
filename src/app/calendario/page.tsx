@@ -3,6 +3,6 @@ import { getAllScreenings } from '@/lib/data';
 import CalendarioClient from './CalendarioClient';
 
 export default async function Calendario() {
-  const screenings = getAllScreenings();
+  const screenings = await getAllScreenings();
   return <CalendarioClient screenings={screenings} />;
 }

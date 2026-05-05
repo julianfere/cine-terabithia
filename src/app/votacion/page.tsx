@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 
 export default async function Votacion() {
-  const upcoming = getUpcomingScreening();
+  const upcoming = await getUpcomingScreening();
   if (!upcoming) {
     return (
       <div className="page-enter shell" style={{ paddingTop: 64, textAlign: 'center' }}>
@@ -20,14 +20,15 @@ export default async function Votacion() {
   const session = await auth();
   const username = session?.user?.name ?? null;
 
-  // If the upcoming screening already has a movie, voting is not needed
   if (upcoming.title) {
     return <VotacionClient screening={upcoming} candidates={[]} username={username} movieAssigned />;
   }
 
   const db = getDb();
-  const votes = db.select().from(screeningVotes).where(eq(screeningVotes.screeningId, upcoming.id)).all();
-  const allRecs = db.select().from(recommendations).all();
+  const [votes, allRecs] = await Promise.all([
+    db.select().from(screeningVotes).where(eq(screeningVotes.screeningId, upcoming.id)),
+    db.select().from(recommendations),
+  ]);
 
   const candidates = allRecs.map((r) => ({
     ...r,

@@ -10,15 +10,17 @@ export default async function AdminPage() {
   const session = await auth();
   if (!session || session.user?.role !== 'admin') redirect('/login');
 
-  const screenings = getAllScreenings();
-  const recs = getRecommendations();
   const db = getDb();
-  const allUsers = db.select({
-    id: users.id,
-    username: users.username,
-    role: users.role,
-    createdAt: users.createdAt,
-  }).from(users).all();
+  const [screenings, recs, allUsers] = await Promise.all([
+    getAllScreenings(),
+    getRecommendations(),
+    db.select({
+      id: users.id,
+      username: users.username,
+      role: users.role,
+      createdAt: users.createdAt,
+    }).from(users),
+  ]);
 
   return <AdminClient screenings={screenings} recs={recs} initialUsers={allUsers} />;
 }

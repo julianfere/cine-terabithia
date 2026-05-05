@@ -24,15 +24,22 @@ function formatMonthDay(d: string) {
 }
 
 export default async function Home() {
-  const upcoming = getUpcomingScreening();
-  const past = getPastScreenings();
-  const recs = getRecommendations();
+  const [upcoming, past, recs, profiles] = await Promise.all([
+    getUpcomingScreening(),
+    getPastScreenings(),
+    getRecommendations(),
+    getUserProfiles(),
+  ]);
+
   const topRec = recs[0] ?? null;
-  const profiles = getUserProfiles();
 
   const db = getDb();
-  const totalFunciones = db.select({ cnt: count(screenings.id) }).from(screenings).where(eq(screenings.status, 'past')).get()?.cnt ?? 0;
-  const totalScores = db.select({ cnt: count(scores.id) }).from(scores).get()?.cnt ?? 0;
+  const [funcionesResult, scoresResult] = await Promise.all([
+    db.select({ cnt: count(screenings.id) }).from(screenings).where(eq(screenings.status, 'past')),
+    db.select({ cnt: count(scores.id) }).from(scores),
+  ]);
+  const totalFunciones = Number(funcionesResult[0]?.cnt ?? 0);
+  const totalScores = Number(scoresResult[0]?.cnt ?? 0);
 
   const ultima = past[0] ?? null;
   const recentGrid = past.slice(1, 8);

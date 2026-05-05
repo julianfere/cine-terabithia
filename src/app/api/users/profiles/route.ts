@@ -2,6 +2,6 @@ import { NextResponse } from 'next/server';
 import { getUserProfiles } from '@/lib/data';
 
 export async function GET() {
-  const profiles = getUserProfiles();
+  const profiles = await getUserProfiles();
   return NextResponse.json(profiles);
 }

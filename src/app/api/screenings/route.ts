@@ -6,7 +6,7 @@ import { auth } from '@/auth';
 
 export async function GET() {
   const db = getDb();
-  const rows = db
+  const rows = await db
     .select({
       id: screenings.id,
       movieId: screenings.movieId,
@@ -27,16 +27,14 @@ export async function GET() {
     })
     .from(screenings)
     .leftJoin(movies, eq(screenings.movieId, movies.id))
-    .orderBy(desc(screenings.scheduledDate))
-    .all();
+    .orderBy(desc(screenings.scheduledDate));
 
-  const avgScores = db
+  const avgScores = await db
     .select({ screeningId: scores.screeningId, avg: avg(scores.score), cnt: count(scores.id) })
     .from(scores)
-    .groupBy(scores.screeningId)
-    .all();
+    .groupBy(scores.screeningId);
 
-  const avgMap = new Map(avgScores.map((s) => [s.screeningId, { avg: Number(s.avg || 0), cnt: s.cnt }]));
+  const avgMap = new Map(avgScores.map((s) => [s.screeningId, { avg: Number(s.avg || 0), cnt: Number(s.cnt) }]));
 
   return NextResponse.json(rows.map((r) => ({ ...r, avgScore: avgMap.get(r.id)?.avg ?? null, scoreCount: avgMap.get(r.id)?.cnt ?? 0 })));
 }
@@ -50,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   let movieId = body.movieId ?? null;
   if (!movieId && body.title?.trim()) {
-    const result = db.insert(movies).values({
+    const result = await db.insert(movies).values({
       title: body.title,
       year: body.year,
       director: body.director,
@@ -61,11 +59,11 @@ export async function POST(req: NextRequest) {
       tmdbId: body.tmdbId,
       posterPath: body.posterPath,
       createdAt: Date.now(),
-    }).returning({ id: movies.id }).get();
-    movieId = result.id;
+    }).returning({ id: movies.id });
+    movieId = result[0].id;
   }
 
-  const result = db.insert(screenings).values({
+  const result = await db.insert(screenings).values({
     movieId,
     scheduledDate: body.scheduledDate,
     hour: body.hour,
@@ -75,7 +73,7 @@ export async function POST(req: NextRequest) {
     curatedBy: body.curatedBy,
     notes: body.notes,
     createdAt: Date.now(),
-  }).returning().get();
+  }).returning();
 
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json(result[0], { status: 201 });
 }

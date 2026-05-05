@@ -8,21 +8,20 @@ export async function GET(req: NextRequest) {
   const db = getDb();
   const screeningIdParam = req.nextUrl.searchParams.get('screeningId');
 
-  const upcoming = screeningIdParam
-    ? db.select().from(screenings).where(eq(screenings.id, Number(screeningIdParam))).get()
-    : db.select().from(screenings).where(eq(screenings.status, 'upcoming')).get();
+  const screeningRows = screeningIdParam
+    ? await db.select().from(screenings).where(eq(screenings.id, Number(screeningIdParam))).limit(1)
+    : await db.select().from(screenings).where(eq(screenings.status, 'upcoming')).limit(1);
 
+  const upcoming = screeningRows[0];
   if (!upcoming) return NextResponse.json([]);
 
-  const votes = db.select().from(screeningVotes).where(eq(screeningVotes.screeningId, upcoming.id)).all();
+  const votes = await db.select().from(screeningVotes).where(eq(screeningVotes.screeningId, upcoming.id));
 
-  // When called with screeningId (admin assign panel), return raw votes
   if (screeningIdParam) return NextResponse.json(votes);
 
   const recIds = [...new Set(votes.map((v) => v.recommendationId))];
-  const recs = recIds.length
-    ? db.select().from(recommendations).all().filter((r) => recIds.includes(r.id))
-    : [];
+  const allRecs = recIds.length ? await db.select().from(recommendations) : [];
+  const recs = allRecs.filter((r) => recIds.includes(r.id));
 
   const result = recs.map((r) => ({
     ...r,
@@ -42,25 +41,25 @@ export async function POST(req: NextRequest) {
   const { screeningId, recommendationId } = body;
 
   const db = getDb();
-  const existing = db.select().from(screeningVotes)
+  const existing = await db.select().from(screeningVotes)
     .where(and(eq(screeningVotes.screeningId, Number(screeningId)), eq(screeningVotes.username, username)))
-    .get();
+    .limit(1);
 
-  if (existing) {
-    if (existing.recommendationId === Number(recommendationId)) {
-      db.delete(screeningVotes).where(eq(screeningVotes.id, existing.id)).run();
+  if (existing[0]) {
+    if (existing[0].recommendationId === Number(recommendationId)) {
+      await db.delete(screeningVotes).where(eq(screeningVotes.id, existing[0].id));
       return NextResponse.json({ voted: false });
     }
-    db.update(screeningVotes).set({ recommendationId: Number(recommendationId) }).where(eq(screeningVotes.id, existing.id)).run();
+    await db.update(screeningVotes).set({ recommendationId: Number(recommendationId) }).where(eq(screeningVotes.id, existing[0].id));
     return NextResponse.json({ voted: true, changed: true });
   }
 
-  db.insert(screeningVotes).values({
+  await db.insert(screeningVotes).values({
     screeningId: Number(screeningId),
     recommendationId: Number(recommendationId),
     username,
     createdAt: Date.now(),
-  }).run();
+  });
 
   return NextResponse.json({ voted: true }, { status: 201 });
 }

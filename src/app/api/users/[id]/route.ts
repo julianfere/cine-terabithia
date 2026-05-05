@@ -10,6 +10,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
   const db = getDb();
-  db.delete(users).where(eq(users.id, Number(id))).run();
+  await db.delete(users).where(eq(users.id, Number(id)));
   return NextResponse.json({ ok: true });
 }

@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, serial, bigint } from 'drizzle-orm/pg-core';
 
-export const movies = sqliteTable('movies', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const movies = pgTable('movies', {
+  id: serial('id').primaryKey(),
   tmdbId: integer('tmdb_id'),
   title: text('title').notNull(),
   originalTitle: text('original_title'),
@@ -12,11 +12,11 @@ export const movies = sqliteTable('movies', {
   posterHue: integer('poster_hue').default(200),
   duration: integer('duration'),
   genre: text('genre'),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const screenings = sqliteTable('screenings', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const screenings = pgTable('screenings', {
+  id: serial('id').primaryKey(),
   movieId: integer('movie_id').references(() => movies.id),
   scheduledDate: text('scheduled_date').notNull(),
   hour: text('hour'),
@@ -25,20 +25,20 @@ export const screenings = sqliteTable('screenings', {
   snack: text('snack'),
   location: text('location'),
   curatedBy: text('curated_by'),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const scores = sqliteTable('scores', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const scores = pgTable('scores', {
+  id: serial('id').primaryKey(),
   screeningId: integer('screening_id').references(() => screenings.id),
   username: text('username').notNull(),
   score: integer('score').notNull(),
   comment: text('comment'),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const recommendations = sqliteTable('recommendations', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const recommendations = pgTable('recommendations', {
+  id: serial('id').primaryKey(),
   tmdbId: integer('tmdb_id'),
   title: text('title').notNull(),
   posterPath: text('poster_path'),
@@ -50,30 +50,30 @@ export const recommendations = sqliteTable('recommendations', {
   suggestedBy: text('suggested_by').notNull(),
   reason: text('reason'),
   featured: integer('featured').default(0),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const recommendationVotes = sqliteTable('recommendation_votes', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const recommendationVotes = pgTable('recommendation_votes', {
+  id: serial('id').primaryKey(),
   recommendationId: integer('recommendation_id').references(() => recommendations.id),
   username: text('username').notNull(),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const screeningVotes = sqliteTable('screening_votes', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const screeningVotes = pgTable('screening_votes', {
+  id: serial('id').primaryKey(),
   screeningId: integer('screening_id').references(() => screenings.id),
   recommendationId: integer('recommendation_id').references(() => recommendations.id),
   username: text('username').notNull(),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });
 
-export const users = sqliteTable('users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
   role: text('role').notNull().default('user'),
   displayName: text('display_name'),
   avatar: text('avatar'),
-  createdAt: integer('created_at').default(0),
+  createdAt: bigint('created_at', { mode: 'number' }).default(0),
 });

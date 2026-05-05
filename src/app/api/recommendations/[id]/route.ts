@@ -10,9 +10,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const numId = Number(id);
   const db = getDb();
-  db.delete(screeningVotes).where(eq(screeningVotes.recommendationId, numId)).run();
-  db.delete(recommendationVotes).where(eq(recommendationVotes.recommendationId, numId)).run();
-  db.delete(recommendations).where(eq(recommendations.id, numId)).run();
+  await db.delete(screeningVotes).where(eq(screeningVotes.recommendationId, numId));
+  await db.delete(recommendationVotes).where(eq(recommendationVotes.recommendationId, numId));
+  await db.delete(recommendations).where(eq(recommendations.id, numId));
   return NextResponse.json({ ok: true });
 }
 
@@ -22,6 +22,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params;
   const body = await req.json();
   const db = getDb();
-  const result = db.update(recommendations).set(body).where(eq(recommendations.id, Number(id))).returning().get();
-  return NextResponse.json(result);
+  const result = await db.update(recommendations).set(body).where(eq(recommendations.id, Number(id))).returning();
+  return NextResponse.json(result[0]);
 }

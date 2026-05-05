@@ -11,20 +11,20 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const db = getDb();
-  const existing = db.select().from(recommendationVotes)
+  const existing = await db.select().from(recommendationVotes)
     .where(and(eq(recommendationVotes.recommendationId, Number(id)), eq(recommendationVotes.username, username)))
-    .get();
+    .limit(1);
 
-  if (existing) {
-    db.delete(recommendationVotes).where(eq(recommendationVotes.id, existing.id)).run();
+  if (existing[0]) {
+    await db.delete(recommendationVotes).where(eq(recommendationVotes.id, existing[0].id));
     return NextResponse.json({ voted: false });
   }
 
-  db.insert(recommendationVotes).values({
+  await db.insert(recommendationVotes).values({
     recommendationId: Number(id),
     username,
     createdAt: Date.now(),
-  }).run();
+  });
 
   return NextResponse.json({ voted: true }, { status: 201 });
 }

@@ -7,7 +7,7 @@ import { auth } from '@/auth';
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
-  const rows = db.select().from(scores).where(eq(scores.screeningId, Number(id))).all();
+  const rows = await db.select().from(scores).where(eq(scores.screeningId, Number(id)));
   return NextResponse.json(rows);
 }
 
@@ -25,25 +25,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const db = getDb();
-  const existing = db.select().from(scores)
+  const existing = await db.select().from(scores)
     .where(and(eq(scores.screeningId, Number(id)), eq(scores.username, username)))
-    .get();
+    .limit(1);
 
-  if (existing) {
-    const updated = db.update(scores)
+  if (existing[0]) {
+    const updated = await db.update(scores)
       .set({ score, comment: comment || null })
-      .where(eq(scores.id, existing.id))
-      .returning().get();
-    return NextResponse.json(updated);
+      .where(eq(scores.id, existing[0].id))
+      .returning();
+    return NextResponse.json(updated[0]);
   }
 
-  const result = db.insert(scores).values({
+  const result = await db.insert(scores).values({
     screeningId: Number(id),
     username,
     score,
     comment: comment || null,
     createdAt: Date.now(),
-  }).returning().get();
+  }).returning();
 
-  return NextResponse.json(result, { status: 201 });
+  return NextResponse.json(result[0], { status: 201 });
 }

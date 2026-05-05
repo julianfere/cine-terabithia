@@ -67,14 +67,13 @@ function buildScreeningQuery() {
     .leftJoin(movies, eq(screenings.movieId, movies.id));
 }
 
-function attachAvgScores(rows: Omit<ScreeningRow, 'avgScore' | 'scoreCount'>[]): ScreeningRow[] {
+async function attachAvgScores(rows: Omit<ScreeningRow, 'avgScore' | 'scoreCount'>[]): Promise<ScreeningRow[]> {
   const db = getDb();
-  const avgScores = db
+  const avgScores = await db
     .select({ screeningId: scores.screeningId, avg: avg(scores.score), cnt: count(scores.id) })
     .from(scores)
-    .groupBy(scores.screeningId)
-    .all();
-  const map = new Map(avgScores.map((s) => [s.screeningId, { avg: Number(s.avg || 0), cnt: s.cnt }]));
+    .groupBy(scores.screeningId);
+  const map = new Map(avgScores.map((s) => [s.screeningId, { avg: Number(s.avg || 0), cnt: Number(s.cnt) }]));
   return rows.map((r) => ({
     ...r,
     avgScore: map.get(r.id)?.avg ?? null,
@@ -82,60 +81,57 @@ function attachAvgScores(rows: Omit<ScreeningRow, 'avgScore' | 'scoreCount'>[]):
   }));
 }
 
-export function getUpcomingScreening(): ScreeningRow | null {
-  const row = buildScreeningQuery()
+export async function getUpcomingScreening(): Promise<ScreeningRow | null> {
+  const rows = await buildScreeningQuery()
     .where(eq(screenings.status, 'upcoming'))
     .orderBy(asc(screenings.scheduledDate))
-    .get();
-  if (!row) return null;
-  return attachAvgScores([row])[0];
+    .limit(1);
+  if (!rows[0]) return null;
+  return (await attachAvgScores([rows[0]]))[0];
 }
 
-export function getPastScreenings(): ScreeningRow[] {
-  const rows = buildScreeningQuery()
+export async function getPastScreenings(): Promise<ScreeningRow[]> {
+  const rows = await buildScreeningQuery()
     .where(eq(screenings.status, 'past'))
-    .orderBy(desc(screenings.scheduledDate))
-    .all();
+    .orderBy(desc(screenings.scheduledDate));
   return attachAvgScores(rows);
 }
 
-export function getAllScreenings(): ScreeningRow[] {
-  const rows = buildScreeningQuery()
-    .orderBy(desc(screenings.scheduledDate))
-    .all();
+export async function getAllScreenings(): Promise<ScreeningRow[]> {
+  const rows = await buildScreeningQuery()
+    .orderBy(desc(screenings.scheduledDate));
   return attachAvgScores(rows);
 }
 
-export function getScreeningById(id: number): ScreeningRow | null {
-  const row = buildScreeningQuery()
+export async function getScreeningById(id: number): Promise<ScreeningRow | null> {
+  const rows = await buildScreeningQuery()
     .where(eq(screenings.id, id))
-    .get();
-  if (!row) return null;
-  return attachAvgScores([row])[0];
+    .limit(1);
+  if (!rows[0]) return null;
+  return (await attachAvgScores([rows[0]]))[0];
 }
 
-export function getScoresForScreening(screeningId: number) {
+export async function getScoresForScreening(screeningId: number) {
   const db = getDb();
-  return db.select().from(scores).where(eq(scores.screeningId, screeningId)).orderBy(desc(scores.score)).all();
+  return db.select().from(scores).where(eq(scores.screeningId, screeningId)).orderBy(desc(scores.score));
 }
 
-export function getUserProfiles(): ProfilesMap {
+export async function getUserProfiles(): Promise<ProfilesMap> {
   const db = getDb();
-  const rows = db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar }).from(users).all();
+  const rows = await db.select({ username: users.username, displayName: users.displayName, avatar: users.avatar }).from(users);
   const map: ProfilesMap = {};
   for (const u of rows) map[u.username] = { displayName: u.displayName ?? null, avatar: u.avatar ?? null };
   return map;
 }
 
-export function getRecommendations(): RecommendationRow[] {
+export async function getRecommendations(): Promise<RecommendationRow[]> {
   const db = getDb();
-  const rows = db.select().from(recommendations).all();
-  const voteCounts = db
+  const rows = await db.select().from(recommendations);
+  const voteCounts = await db
     .select({ recId: recommendationVotes.recommendationId, cnt: count(recommendationVotes.id) })
     .from(recommendationVotes)
-    .groupBy(recommendationVotes.recommendationId)
-    .all();
-  const voteMap = new Map(voteCounts.map((v) => [v.recId, v.cnt]));
+    .groupBy(recommendationVotes.recommendationId);
+  const voteMap = new Map(voteCounts.map((v) => [v.recId, Number(v.cnt)]));
   return rows
     .map((r) => ({ ...r, votes: voteMap.get(r.id) ?? 0 }))
     .sort((a, b) => b.votes - a.votes) as RecommendationRow[];
