@@ -1,0 +1,7 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="20" fill="#E46217"/>
+  <path d="M 16 32 H 84 V 48 a6 6 0 0 0 0 12 V 76 H 16 V 60 a6 6 0 0 0 0 -12 Z" fill="#14181C"/>
+  <line x1="56" y1="36" x2="56" y2="72" stroke="#E46217" stroke-width="1.5" stroke-dasharray="2.5 2.5"/>
+  <text x="36" y="59" text-anchor="middle" font-family="DM Mono" font-weight="500" font-size="11" fill="#E46217" letter-spacing="1">CT</text>
+  <text x="71" y="59" text-anchor="middle" font-family="DM Mono" font-weight="500" font-size="9" fill="#E46217">048</text>
+</svg>
