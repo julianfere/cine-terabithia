@@ -20,7 +20,9 @@ function formatDate(d: string) {
 
 export default function VotacionClient({ screening, candidates: initialCandidates, username, movieAssigned }: { screening: ScreeningRow; candidates: Candidate[]; username: string | null; movieAssigned?: boolean }) {
   const [candidates, setCandidates] = useState(initialCandidates);
-  const [myVote, setMyVote] = useState<number | null>(null);
+  const [myVote, setMyVote] = useState<number | null>(
+    username ? (initialCandidates.find((c) => c.voters.includes(username))?.id ?? null) : null
+  );
   const profiles = useProfiles();
 
   const total = candidates.reduce((s, c) => s + c.totalVotos, 0);

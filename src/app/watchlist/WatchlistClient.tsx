@@ -11,6 +11,8 @@ import { useProfiles, resolveUser } from '@/lib/useProfiles';
 type NewRec = { title: string; year: string; director: string; genre: string; duration: string; why: string; posterPath: string | null; tmdbId: number | null };
 const emptyRec = (): NewRec => ({ title: '', year: '', director: '', genre: '', duration: '', why: '', posterPath: null, tmdbId: null });
 
+type EditState = { id: number; title: string; reason: string };
+
 export default function WatchlistClient({ initialRecs, username, initialVotedIds }: { initialRecs: RecommendationRow[]; username: string | null; initialVotedIds: number[] }) {
   const [recs, setRecs] = useState(initialRecs);
   const profiles = useProfiles();
@@ -18,6 +20,8 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
   const [newRec, setNewRec] = useState<NewRec>(emptyRec());
+  const [editState, setEditState] = useState<EditState | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   const sorted = useMemo(() => {
     const list = filter === 'mine' && username
@@ -75,6 +79,28 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       setRecs((prev) => [rec, ...prev]);
       setNewRec(emptyRec());
       setShowAdd(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!username) return;
+    setDeleting(id);
+    const res = await fetch(`/api/recommendations/${id}`, { method: 'DELETE' });
+    if (res.ok) setRecs((prev) => prev.filter((r) => r.id !== id));
+    setDeleting(null);
+  };
+
+  const handleEditSave = async () => {
+    if (!editState) return;
+    const res = await fetch(`/api/recommendations/${editState.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: editState.title.trim(), reason: editState.reason.trim() || null }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setRecs((prev) => prev.map((r) => r.id === updated.id ? { ...r, title: updated.title, reason: updated.reason } : r));
+      setEditState(null);
     }
   };
 
@@ -156,17 +182,58 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
               <Poster label={(r.title ?? '').toUpperCase().slice(0, 10)} hue={r.posterHue ?? 200} posterPath={r.posterPath} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 17, lineHeight: 1.2 }}>
-                {r.title}
-                {r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>&apos;{String(r.year).slice(2)}</span>}
-              </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3, marginBottom: 4 }}>
-                {r.director && `dir. ${r.director}`}{r.duration ? ` · ${r.duration} min` : ''}{r.genre ? ` · ${r.genre}` : ''}
-              </div>
-              {r.reason?.trim() && (
-                <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)' }}>&quot;{r.reason}&quot;</div>
+              {editState?.id === r.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <input
+                    value={editState.title}
+                    onChange={(e) => setEditState((s) => s ? { ...s, title: e.target.value } : s)}
+                    style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid var(--accent)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', padding: '2px 0', outline: 'none' }}
+                  />
+                  <input
+                    value={editState.reason}
+                    onChange={(e) => setEditState((s) => s ? { ...s, reason: e.target.value } : s)}
+                    placeholder="¿Por qué la recomendás?"
+                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--line)', fontSize: 13, color: 'var(--ink-soft)', padding: '2px 0', outline: 'none', fontStyle: 'italic' }}
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                    <button className="btn btn-primary btn-sm" onClick={handleEditSave} disabled={!editState.title.trim()}>Guardar</button>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditState(null)}>Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 17, lineHeight: 1.2 }}>
+                    {r.title}
+                    {r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>&apos;{String(r.year).slice(2)}</span>}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3, marginBottom: 4 }}>
+                    {r.director && `dir. ${r.director}`}{r.duration ? ` · ${r.duration} min` : ''}{r.genre ? ` · ${r.genre}` : ''}
+                  </div>
+                  {r.reason?.trim() && (
+                    <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)' }}>&quot;{r.reason}&quot;</div>
+                  )}
+                  {r.featured ? <Badge kind="accent">Destacada</Badge> : null}
+                  {r.suggestedBy === username && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setEditState({ id: r.id, title: r.title, reason: r.reason ?? '' })}
+                        style={{ fontSize: 11, padding: '2px 8px' }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => handleDelete(r.id)}
+                        disabled={deleting === r.id}
+                        style={{ fontSize: 11, padding: '2px 8px', color: '#e05252' }}
+                      >
+                        {deleting === r.id ? '…' : 'Eliminar'}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
-              {r.featured ? <Badge kind="accent">Destacada</Badge> : null}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <Avatar {...resolveUser(profiles, r.suggestedBy)} size="sm" />

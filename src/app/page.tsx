@@ -122,21 +122,28 @@ export default async function Home() {
               )}
 
               {/* Meta strip */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                <div style={{ flex: 1, padding: '12px 16px', borderRight: '1px solid var(--line)', minWidth: 120 }}>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Cuándo</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
+                    {new Date(upcoming.scheduledDate + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    {upcoming.hour && <span style={{ display: 'block', color: 'var(--ink-mute)', fontSize: 11 }}>{upcoming.hour}</span>}
+                  </div>
+                </div>
                 {upcoming.location && (
-                  <div style={{ padding: '12px 16px', borderRight: '1px solid var(--line)' }}>
+                  <div style={{ flex: 1, padding: '12px 16px', borderRight: '1px solid var(--line)', minWidth: 120 }}>
                     <div className="eyebrow" style={{ marginBottom: 4 }}>Lugar</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{upcoming.location}</div>
                   </div>
                 )}
                 {upcoming.snack && (
-                  <div style={{ padding: '12px 16px', borderRight: '1px solid var(--line)' }}>
+                  <div style={{ flex: 1, padding: '12px 16px', borderRight: '1px solid var(--line)', minWidth: 120 }}>
                     <div className="eyebrow" style={{ marginBottom: 4 }}>Snack</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{upcoming.snack}</div>
                   </div>
                 )}
                 {upcoming.curatedBy && (
-                  <div style={{ padding: '12px 16px' }}>
+                  <div style={{ flex: 1, padding: '12px 16px', minWidth: 120 }}>
                     <div className="eyebrow" style={{ marginBottom: 4 }}>Curador</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <Avatar {...resolveUser(profiles, upcoming.curatedBy)} size="sm" />

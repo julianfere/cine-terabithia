@@ -272,14 +272,6 @@ export default function DetalleClient({
                         <TicketIcon />
                         Confirmar asistencia
                       </button>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                        <button style={{ height: 38, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                          Quizás
-                        </button>
-                        <button style={{ height: 38, borderRadius: 8, background: 'var(--bg-elev)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                          No puedo
-                        </button>
-                      </div>
                     </div>
                   ) : (
                     <Link href="/login" className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
