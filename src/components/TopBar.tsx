@@ -140,7 +140,7 @@ export default function TopBar() {
               <button className="profile-trigger" onClick={() => setMenuOpen((v) => !v)}>
                 <Avatar name={displayName} avatarId={avatarId} size="md" />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1, whiteSpace: 'nowrap', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
+                  <div style={{ fontWeight: 600, fontSize: 13, lineHeight: 1, whiteSpace: 'nowrap', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--ink-soft)' }}>{displayName}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.06em', marginTop: 2 }}>@{username}</div>
                 </div>
                 <IconChevron open={menuOpen} />
