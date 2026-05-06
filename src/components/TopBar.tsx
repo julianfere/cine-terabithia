@@ -151,7 +151,7 @@ export default function TopBar() {
                 <div style={{ padding: '12px 12px 14px', borderBottom: '1px solid var(--line)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <Avatar name={displayName} avatarId={avatarId} size="lg" />
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{displayName}</div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>{displayName}</div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', marginTop: 2 }}>@{username}</div>
                   </div>
                 </div>
