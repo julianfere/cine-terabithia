@@ -4,7 +4,7 @@ import type { RecommendationRow } from '@/lib/data';
 import { Poster } from '@/components/Poster';
 import { Badge } from '@/components/Badge';
 import { SectionHeader } from '@/components/SectionHeader';
-import { Avatar } from '@/components/Avatar';
+import { Avatar, AvatarStack } from '@/components/Avatar';
 import MovieSearch, { type MovieDetails } from '@/components/MovieSearch';
 import { useProfiles, resolveUser } from '@/lib/useProfiles';
 
@@ -39,7 +39,11 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
     });
     if (res.ok) {
       const { voted } = await res.json();
-      setRecs((prev) => prev.map((r) => r.id !== id ? r : { ...r, votes: r.votes + (voted ? 1 : -1) }));
+      setRecs((prev) => prev.map((r) => r.id !== id ? r : {
+        ...r,
+        votes: r.votes + (voted ? 1 : -1),
+        voters: voted ? [...r.voters, username!] : r.voters.filter((v) => v !== username),
+      }));
       setVotedIds((prev) => { const n = new Set(prev); voted ? n.add(id) : n.delete(id); return n; });
     }
   };
@@ -238,7 +242,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <Avatar {...resolveUser(profiles, r.suggestedBy)} size="sm" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
               <button
                 onClick={() => handleVote(r.id)}
                 disabled={!username}
@@ -256,6 +260,9 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
               >
                 ↑ {r.votes}
               </button>
+              {r.voters.length > 0 && (
+                <AvatarStack names={r.voters} max={4} size="sm" profiles={profiles} />
+              )}
             </div>
           </div>
         ))}

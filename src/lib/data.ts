@@ -38,6 +38,7 @@ export type RecommendationRow = {
   reason: string | null;
   featured: number | null;
   votes: number;
+  voters: string[];
   tmdbId: number | null;
 };
 
@@ -143,13 +144,20 @@ export async function getUserRecommendationVotes(username: string): Promise<numb
 export async function getRecommendations(): Promise<RecommendationRow[]> {
   const db = getDb();
   const rows = await db.select().from(recommendations);
-  const voteCounts = await db
-    .select({ recId: recommendationVotes.recommendationId, cnt: count(recommendationVotes.id) })
-    .from(recommendationVotes)
-    .groupBy(recommendationVotes.recommendationId);
-  const voteMap = new Map(voteCounts.map((v) => [v.recId, Number(v.cnt)]));
+  const voteRows = await db
+    .select({ recId: recommendationVotes.recommendationId, username: recommendationVotes.username })
+    .from(recommendationVotes);
+
+  const votersMap = new Map<number, string[]>();
+  for (const v of voteRows) {
+    if (v.recId === null) continue;
+    const arr = votersMap.get(v.recId) ?? [];
+    arr.push(v.username);
+    votersMap.set(v.recId, arr);
+  }
+
   return rows
-    .map((r) => ({ ...r, votes: voteMap.get(r.id) ?? 0 }))
+    .map((r) => ({ ...r, voters: votersMap.get(r.id) ?? [], votes: (votersMap.get(r.id) ?? []).length }))
     .sort((a, b) => b.votes - a.votes) as RecommendationRow[];
 }
 

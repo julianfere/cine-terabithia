@@ -149,7 +149,7 @@ export default function VotacionClient({ screening, candidates: initialCandidate
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <AvatarStack names={c.voters.slice(0, 8)} max={8} size="sm" />
+                <AvatarStack names={c.voters.slice(0, 8)} max={8} size="sm" profiles={profiles} />
                 {username && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleVote(c.id); }}

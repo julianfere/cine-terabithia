@@ -1,20 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { recommendations, recommendationVotes } from '@/db/schema';
-import { eq, desc, count } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { auth } from '@/auth';
 
 export async function GET() {
   const db = getDb();
   const rows = await db.select().from(recommendations).orderBy(desc(recommendations.createdAt));
-  const voteCounts = await db
-    .select({ recId: recommendationVotes.recommendationId, cnt: count(recommendationVotes.id) })
-    .from(recommendationVotes)
-    .groupBy(recommendationVotes.recommendationId);
+  const voteRows = await db
+    .select({ recId: recommendationVotes.recommendationId, username: recommendationVotes.username })
+    .from(recommendationVotes);
 
-  const voteMap = new Map(voteCounts.map((v) => [v.recId, Number(v.cnt)]));
+  const votersMap = new Map<number, string[]>();
+  for (const v of voteRows) {
+    if (v.recId === null) continue;
+    const arr = votersMap.get(v.recId) ?? [];
+    arr.push(v.username);
+    votersMap.set(v.recId, arr);
+  }
+
   const result = rows
-    .map((r) => ({ ...r, votes: voteMap.get(r.id) ?? 0 }))
+    .map((r) => ({ ...r, voters: votersMap.get(r.id) ?? [], votes: (votersMap.get(r.id) ?? []).length }))
     .sort((a, b) => b.votes - a.votes);
 
   return NextResponse.json(result);
@@ -40,5 +46,5 @@ export async function POST(req: NextRequest) {
     createdAt: Date.now(),
   }).returning();
 
-  return NextResponse.json({ ...result[0], votes: 0 }, { status: 201 });
+  return NextResponse.json({ ...result[0], votes: 0, voters: [] }, { status: 201 });
 }

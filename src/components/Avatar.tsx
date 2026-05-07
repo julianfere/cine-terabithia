@@ -1,5 +1,7 @@
 'use client';
 import { AVATARS } from '@/lib/avatars';
+import type { ProfilesMap } from '@/lib/profiles';
+import { resolveUser } from '@/lib/profiles';
 
 const COLORS = [
   '#E85D3C','#3A7D44','#D4A24C','#7B5EA7','#C7426E',
@@ -55,16 +57,18 @@ interface AvatarStackProps {
   names: string[];
   max?: number;
   size?: 'sm' | 'md';
+  profiles?: ProfilesMap;
 }
 
-export function AvatarStack({ names, max = 6, size = 'md' }: AvatarStackProps) {
+export function AvatarStack({ names, max = 6, size = 'md', profiles }: AvatarStackProps) {
   const shown = names.slice(0, max);
   const rest = names.length - max;
   return (
     <span className="avatar-stack">
-      {shown.map((name) => (
-        <Avatar key={name} name={name} size={size} />
-      ))}
+      {shown.map((username) => {
+        const resolved = profiles ? resolveUser(profiles, username) : { name: username, avatarId: null };
+        return <Avatar key={username} name={resolved.name} avatarId={resolved.avatarId} size={size} title={resolved.name} />;
+      })}
       {rest > 0 && (
         <span className={`avatar ${size === 'sm' ? 'sm' : ''}`} style={{ background: 'var(--bg-hover)', color: 'var(--ink-soft)' }}>
           +{rest}
