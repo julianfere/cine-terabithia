@@ -44,6 +44,12 @@ export default function AdminClient({
   const [voteResults, setVoteResults] = useState<{ id: number; title: string; year: number | null; director: string | null; posterPath: string | null; votes: number }[]>([]);
   const [quickRec, setQuickRec] = useState<RecommendationRow | null>(null);
   const [quickForm, setQuickForm] = useState({ scheduledDate: '', hour: '21:00', location: '', snack: '', curatedBy: '' });
+  const [editingScreening, setEditingScreening] = useState<ScreeningRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    scheduledDate: '', hour: '', status: 'upcoming', snack: '', location: '', curatedBy: '', notes: '',
+    title: '', year: '', director: '', genre: '', duration: '', synopsis: '',
+    posterPath: null as string | null, tmdbId: null as string | number | null,
+  });
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
@@ -175,6 +181,80 @@ export default function AdminClient({
       }),
     });
     if (res.ok) { setQuickRec(null); router.refresh(); }
+  };
+
+  const handleOpenEdit = (s: ScreeningRow) => {
+    setEditingScreening(s);
+    setEditForm({
+      scheduledDate: s.scheduledDate,
+      hour: s.hour ?? '',
+      status: s.status,
+      snack: s.snack ?? '',
+      location: s.location ?? '',
+      curatedBy: s.curatedBy ?? '',
+      notes: s.notes ?? '',
+      title: s.title ?? '',
+      year: s.year ? String(s.year) : '',
+      director: s.director ?? '',
+      genre: s.genre ?? '',
+      duration: s.duration ? String(s.duration) : '',
+      synopsis: s.synopsis ?? '',
+      posterPath: s.posterPath ?? null,
+      tmdbId: null,
+    });
+  };
+
+  const handleEditMovieSelect = (m: MovieDetails) => {
+    setEditForm((p) => ({
+      ...p,
+      title: m.title,
+      year: m.year ? String(m.year) : '',
+      director: m.director ?? '',
+      genre: m.genre ?? '',
+      duration: m.duration ? String(m.duration) : '',
+      synopsis: m.synopsis ?? '',
+      posterPath: m.posterPath ?? null,
+      tmdbId: m.tmdbId ?? null,
+    }));
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingScreening) return;
+
+    const screeningPatch = {
+      scheduledDate: editForm.scheduledDate,
+      hour: editForm.hour || null,
+      location: editForm.location || null,
+      snack: editForm.snack || null,
+      curatedBy: editForm.curatedBy || null,
+      status: editForm.status,
+      notes: editForm.notes || null,
+    };
+
+    const moviePatch = editingScreening.title !== null ? {
+      title: editForm.title,
+      year: Number(editForm.year) || null,
+      director: editForm.director || null,
+      genre: editForm.genre || null,
+      duration: Number(editForm.duration) || null,
+      synopsis: editForm.synopsis || null,
+      posterPath: editForm.posterPath || null,
+      tmdbId: editForm.tmdbId ? Number(editForm.tmdbId) : null,
+    } : {};
+
+    const res = await fetch(`/api/screenings/${editingScreening.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...screeningPatch, ...moviePatch }),
+    });
+
+    if (res.ok) {
+      setList((prev) => prev.map((s) =>
+        s.id === editingScreening!.id ? { ...s, ...screeningPatch, ...moviePatch } : s,
+      ));
+      setEditingScreening(null);
+    }
   };
 
   const handleDeleteUser = async (id: number) => {
@@ -494,6 +574,19 @@ export default function AdminClient({
                               ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M20 6L9 17l-5-5" /></svg>
                               : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M3 12a9 9 0 0115-6.7l3-3v9h-9l3-3a6 6 0 100 8.5" /></svg>
                             }
+                          </button>
+                        )}
+
+                        {s.status !== 'past' && (
+                          <button
+                            title="Editar"
+                            onClick={() => handleOpenEdit(s)}
+                            style={ibtn()}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
                           </button>
                         )}
 
@@ -830,6 +923,103 @@ export default function AdminClient({
       </main>
 
       {/* ═══ MODAL: Quick create ═══════════════════════════════════════════ */}
+      {editingScreening && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingScreening(null); }}
+        >
+          <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, padding: 28, width: '100%', maxWidth: 560, maxHeight: '85vh', overflowY: 'auto' }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 4px' }}>Editar función</p>
+            <div style={{ fontWeight: 800, fontSize: 20, marginBottom: 24 }}>
+              {editingScreening.title ?? 'Función sin película'}
+            </div>
+
+            <form onSubmit={handleSaveEdit}>
+              {editingScreening.title !== null && (
+                <>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>Película</p>
+                  <MovieSearch onSelect={handleEditMovieSelect} placeholder="Cambiar película (TMDB)…" />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+                    {([
+                      ['title', 'Título', 'text'],
+                      ['year', 'Año', 'number'],
+                      ['director', 'Director', 'text'],
+                      ['genre', 'Género', 'text'],
+                      ['duration', 'Duración (min)', 'number'],
+                    ] as [string, string, string][]).map(([field, label, type]) => (
+                      <div key={field}>
+                        <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</label>
+                        <input
+                          type={type}
+                          value={(editForm[field as keyof typeof editForm] as string) ?? ''}
+                          onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))}
+                          style={inp}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Sinopsis</label>
+                    <textarea
+                      value={editForm.synopsis}
+                      onChange={(e) => setEditForm((p) => ({ ...p, synopsis: e.target.value }))}
+                      rows={3}
+                      style={{ ...inp, height: 'auto', resize: 'vertical' as const }}
+                    />
+                  </div>
+                  <div style={{ height: 1, background: 'var(--line)', margin: '20px 0' }} />
+                </>
+              )}
+
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>Horario y logística</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Fecha *</label>
+                  <DatePicker value={editForm.scheduledDate} onChange={(v) => setEditForm((p) => ({ ...p, scheduledDate: v }))} style={inp} />
+                </div>
+                {([
+                  ['hour', 'Hora', 'time'],
+                  ['location', 'Lugar', 'text'],
+                  ['snack', 'Snack', 'text'],
+                  ['curatedBy', 'Curado por', 'text'],
+                ] as [string, string, string][]).map(([field, label, type]) => (
+                  <div key={field}>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</label>
+                    <input
+                      type={type}
+                      value={(editForm[field as keyof typeof editForm] as string) ?? ''}
+                      onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))}
+                      style={inp}
+                    />
+                  </div>
+                ))}
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Estado</label>
+                  <select value={editForm.status} onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value }))} style={inp}>
+                    <option value="upcoming">Próxima</option>
+                    <option value="past">Pasada</option>
+                  </select>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Notas</label>
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm((p) => ({ ...p, notes: e.target.value }))}
+                    rows={2}
+                    style={{ ...inp, height: 'auto', resize: 'vertical' as const }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 24 }}>
+                <button type="button" onClick={() => setEditingScreening(null)} style={btnGhost}>Cancelar</button>
+                <button type="submit" style={btnPrimary}>Guardar cambios</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {quickRec && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
