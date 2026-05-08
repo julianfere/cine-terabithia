@@ -9,7 +9,10 @@ type Props = { params: Promise<{ id: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const screening = await getScreeningById(Number(id));
-  if (!screening) return { title: 'Cine Terabithia' };
+  if (!screening) return {
+    title: 'Cine Terabithia',
+    openGraph: { title: 'Cine Terabithia', description: 'Club de cine entre amigos', siteName: 'Cine Terabithia' },
+  };
 
   const title = screening.title
     ? `${screening.title} — Cine Terabithia`
