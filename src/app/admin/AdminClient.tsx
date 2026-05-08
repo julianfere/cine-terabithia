@@ -108,12 +108,12 @@ export default function AdminClient({
     setRecList((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const handleFeatureRec = async (id: number, featured: number | null) => {
+  const handleFeatureRec = async (id: number, featured: boolean | null) => {
     const res = await fetch(`/api/recommendations/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ featured: featured ? 0 : 1 }),
+      body: JSON.stringify({ featured: !featured }),
     });
-    if (res.ok) setRecList((prev) => prev.map((r) => r.id === id ? { ...r, featured: featured ? 0 : 1 } : r));
+    if (res.ok) setRecList((prev) => prev.map((r) => r.id === id ? { ...r, featured: !featured } : r));
   };
 
   const handleMovieSelect = (m: MovieDetails) => {
