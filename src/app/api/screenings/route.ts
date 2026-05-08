@@ -48,19 +48,25 @@ export async function POST(req: NextRequest) {
 
   let movieId = body.movieId ?? null;
   if (!movieId && body.title?.trim()) {
-    const result = await db.insert(movies).values({
-      title: body.title,
-      year: body.year,
-      director: body.director,
-      genre: body.genre,
-      duration: body.duration,
-      synopsis: body.synopsis,
-      posterHue: body.posterHue ?? 200,
-      tmdbId: body.tmdbId,
-      posterPath: body.posterPath,
-      createdAt: Date.now(),
-    }).returning({ id: movies.id });
-    movieId = result[0].id;
+    if (body.tmdbId) {
+      const existing = await db.select({ id: movies.id }).from(movies).where(eq(movies.tmdbId, body.tmdbId)).limit(1);
+      if (existing[0]) movieId = existing[0].id;
+    }
+    if (!movieId) {
+      const result = await db.insert(movies).values({
+        title: body.title,
+        year: body.year,
+        director: body.director,
+        genre: body.genre,
+        duration: body.duration,
+        synopsis: body.synopsis,
+        posterHue: body.posterHue ?? 200,
+        tmdbId: body.tmdbId,
+        posterPath: body.posterPath,
+        createdAt: Date.now(),
+      }).returning({ id: movies.id });
+      movieId = result[0].id;
+    }
   }
 
   const result = await db.insert(screenings).values({
