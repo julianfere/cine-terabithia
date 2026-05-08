@@ -6,13 +6,13 @@ import { auth } from '@/auth';
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const username = session?.user?.name;
-  if (!username) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+  if (!userId) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { id } = await params;
   const db = getDb();
   const existing = await db.select().from(recommendationVotes)
-    .where(and(eq(recommendationVotes.recommendationId, Number(id)), eq(recommendationVotes.username, username)))
+    .where(and(eq(recommendationVotes.recommendationId, Number(id)), eq(recommendationVotes.userId, userId)))
     .limit(1);
 
   if (existing[0]) {
@@ -20,11 +20,6 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ voted: false });
   }
 
-  await db.insert(recommendationVotes).values({
-    recommendationId: Number(id),
-    username,
-    createdAt: Date.now(),
-  });
-
+  await db.insert(recommendationVotes).values({ recommendationId: Number(id), userId });
   return NextResponse.json({ voted: true }, { status: 201 });
 }

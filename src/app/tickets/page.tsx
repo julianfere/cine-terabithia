@@ -9,8 +9,9 @@ export default async function TicketsPage() {
   const session = await auth();
   if (!session?.user?.name) redirect('/login');
 
+  const userId = Number(session.user.id);
   const username = session.user.name;
-  const tickets = await getAttendedScreeningsForUser(username);
+  const tickets = await getAttendedScreeningsForUser(userId);
 
   return <TicketsClient tickets={tickets} username={username} />;
 }

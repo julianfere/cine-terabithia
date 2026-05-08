@@ -4,9 +4,9 @@ import { getAttendedScreeningsForUser } from '@/lib/data';
 
 export async function GET() {
   const session = await auth();
-  const username = session?.user?.name;
-  if (!username) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+  if (!userId) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
-  const tickets = await getAttendedScreeningsForUser(username);
+  const tickets = await getAttendedScreeningsForUser(userId);
   return NextResponse.json(tickets);
 }

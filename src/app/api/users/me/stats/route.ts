@@ -6,14 +6,14 @@ import { auth } from '@/auth';
 
 export async function GET() {
   const session = await auth();
-  const username = session?.user?.name;
-  if (!username) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const userId = session?.user?.id ? Number(session.user.id) : null;
+  if (!userId) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const db = getDb();
   const [ticketRows, suggestionRows, scoreRows] = await Promise.all([
-    db.select({ cnt: count(attendances.id) }).from(attendances).where(eq(attendances.username, username)),
-    db.select({ cnt: count(recommendations.id) }).from(recommendations).where(eq(recommendations.suggestedBy, username)),
-    db.select({ avg: avg(scores.score) }).from(scores).where(eq(scores.username, username)),
+    db.select({ cnt: count(attendances.id) }).from(attendances).where(eq(attendances.userId, userId)),
+    db.select({ cnt: count(recommendations.id) }).from(recommendations).where(eq(recommendations.suggestedById, userId)),
+    db.select({ avg: avg(scores.score) }).from(scores).where(eq(scores.userId, userId)),
   ]);
 
   const ticketCount = Number(ticketRows[0]?.cnt ?? 0);

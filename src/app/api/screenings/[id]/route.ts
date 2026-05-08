@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { screenings, scores, screeningVotes, movies } from '@/db/schema';
+import { screenings, movies } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 
@@ -34,10 +34,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await auth();
   if (session?.user?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const { id } = await params;
-  const numId = Number(id);
   const db = getDb();
-  await db.delete(screeningVotes).where(eq(screeningVotes.screeningId, numId));
-  await db.delete(scores).where(eq(scores.screeningId, numId));
-  await db.delete(screenings).where(eq(screenings.id, numId));
+  // CASCADE en screeningVotes, scores y attendances — basta con borrar el screening
+  await db.delete(screenings).where(eq(screenings.id, Number(id)));
   return NextResponse.json({ ok: true });
 }
