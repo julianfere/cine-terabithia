@@ -4,6 +4,7 @@ import TopBar from '@/components/TopBar';
 import { Providers } from '@/components/Providers';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://cine-terabithia.vercel.app'),
   title: 'Cine Terabithia',
   description: 'Club de cine entre amigos',
 };

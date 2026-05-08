@@ -38,6 +38,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       images,
       type: 'website',
+      url: `https://cine-terabithia.vercel.app/funciones/${id}`,
+      siteName: 'Cine Terabithia',
     },
     twitter: {
       card: 'summary_large_image',
