@@ -41,7 +41,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      if (session.user) session.user.role = (token.role as string) ?? 'user';
+      if (session.user) {
+        session.user.role = (token.role as string) ?? 'user';
+        // token.sub es el user.id seteado por NextAuth desde authorize()
+        if (token.sub) session.user.id = token.sub;
+      }
       return session;
     },
   },
