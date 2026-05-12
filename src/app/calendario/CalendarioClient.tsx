@@ -115,18 +115,17 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
         </div>
       ) : sorted.length > 0 ? (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {sorted.map((f, i) => {
             const { mes, dia } = formatMonthDay(f.scheduledDate);
             return (
               <Link
                 key={f.id}
                 href={`/funciones/${f.id}`}
+                className="cal-list-row"
                 style={{
-                  padding: '14px 20px', display: 'grid',
-                  gridTemplateColumns: '50px 50px 1fr 140px 100px 120px', gap: 16,
-                  alignItems: 'center', cursor: 'pointer',
+                  cursor: 'pointer',
                   borderBottom: i === sorted.length - 1 ? 'none' : '1px solid var(--line)',
-                  transition: 'background 0.15s ease', color: 'inherit',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = '')}
@@ -157,11 +156,11 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
                     </div>
                   )}
                 </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>
+                <div className="cal-col-location" style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>
                   {f.location}
                 </div>
                 {f.curatedBy && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="cal-col-curator" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Avatar {...resolveUser(profiles, f.curatedBy)} size="sm" />
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>{resolveUser(profiles, f.curatedBy).name.toLowerCase()}</span>
                   </div>
@@ -179,6 +178,7 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
               </Link>
             );
           })}
+          </div>
         </div>
       ) : null}
     </div>

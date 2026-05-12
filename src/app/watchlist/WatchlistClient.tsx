@@ -151,7 +151,8 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       )}
 
       {/* Header row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '40px 60px 1fr 80px 100px', gap: 16, padding: '0 16px 10px', borderBottom: '1px solid var(--line)' }}>
+      <div className="wl-table">
+      <div className="wl-head">
         {['#', '', 'Película', 'Sugirió', 'Votos'].map((h, i) => (
           <div key={i} className="eyebrow" style={{ textAlign: i >= 3 ? 'center' : 'left' }}>{h}</div>
         ))}
@@ -175,7 +176,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
         {sorted.map((r, idx) => (
           <div
             key={r.id}
-            style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '40px 60px 1fr 80px 100px', gap: 16, alignItems: 'center', borderBottom: '1px solid var(--line)', transition: 'background 0.15s ease' }}
+            className="wl-row"
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elev)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '')}
           >
@@ -239,10 +240,10 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                 </>
               )}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div className="wl-avatar">
               <Avatar {...resolveUser(profiles, r.suggestedBy)} size="sm" />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <div className="wl-vote">
               <button
                 onClick={() => handleVote(r.id)}
                 disabled={!username}
@@ -266,6 +267,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );

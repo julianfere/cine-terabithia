@@ -270,7 +270,7 @@ export default async function Home() {
               </Link>
             }
           />
-          <div className="card" style={{ padding: 24, display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: 24, alignItems: 'center' }}>
+          <div className="card top-rec-card" style={{ padding: 24 }}>
             <Poster label={(topRec.title ?? '').toUpperCase()} hue={topRec.posterHue ?? 200} posterPath={topRec.posterPath} />
             <div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
@@ -286,7 +286,7 @@ export default async function Home() {
                 {topRec.reason && <span style={{ fontStyle: 'italic' }}>&quot;{topRec.reason}&quot;</span>}
               </div>
             </div>
-            <Link href="/watchlist" className="btn btn-primary">↑ Sumar voto</Link>
+            <Link href="/watchlist" className="btn btn-primary top-rec-card-action">↑ Sumar voto</Link>
           </div>
         </section>
       )}
@@ -297,8 +297,13 @@ export default async function Home() {
         }
         @media (max-width: 900px) {
           .hero-grid { grid-template-columns: 1fr !important; }
-          .last-grid { grid-template-columns: 1fr !important; }
+          .last-grid { grid-template-columns: 120px 1fr !important; }
           .recent-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 600px) {
+          .last-grid { grid-template-columns: 1fr !important; }
+          .recent-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .hero-grid .h-display { font-size: clamp(40px, 10vw, 64px) !important; }
         }
       `}</style>
     </div>

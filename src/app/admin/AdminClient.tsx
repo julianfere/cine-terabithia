@@ -291,19 +291,15 @@ export default function AdminClient({
     outline: 'none', height: 38, fontFamily: 'var(--font-sans)',
   };
 
-  const TBL_COLS = '48px 1.6fr 0.9fr 1fr 1fr 0.7fr 180px';
-
-  const tblHeadStyle: React.CSSProperties = {
-    display: 'grid', gridTemplateColumns: TBL_COLS, alignItems: 'center',
-    gap: 16, padding: '0 18px', height: 38, background: '#0F1216',
+  const tblHeadInline: React.CSSProperties = {
+    padding: '0 18px', background: '#0F1216',
     borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-mono)',
     fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em',
     color: 'var(--ink-mute)',
   };
 
-  const tblRowStyle: React.CSSProperties = {
-    display: 'grid', gridTemplateColumns: TBL_COLS, alignItems: 'center',
-    gap: 16, padding: '0 18px', height: 76,
+  const tblRowInline: React.CSSProperties = {
+    padding: '0 18px',
   };
 
   const ibtn = (variant: 'default' | 'primary' | 'active' = 'default'): React.CSSProperties => ({
@@ -360,21 +356,20 @@ export default function AdminClient({
   // ── render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="page-enter"
-      style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: 'calc(100vh - 65px)', maxWidth: 1440, margin: '0 auto' }}
-    >
+    <div className="page-enter admin-layout">
 
       {/* ═══ SIDEBAR ═══════════════════════════════════════════════════════ */}
-      <aside style={{ borderRight: '1px solid var(--line)', padding: '28px 16px 28px 24px', display: 'flex', flexDirection: 'column' }}>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 6px' }}>
-          Panel · Admin
-        </p>
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.01em', margin: '0 0 24px', lineHeight: 1.05 }}>
-          Cine <span style={{ color: 'var(--accent)' }}>Terabithia</span>
-        </h1>
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-header">
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 6px' }}>
+            Panel · Admin
+          </p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.01em', margin: '0 0 24px', lineHeight: 1.05 }}>
+            Cine <span style={{ color: 'var(--accent)' }}>Terabithia</span>
+          </h1>
+        </div>
 
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'contents' }}>
           {([
             { key: 'funciones' as const, label: 'Funciones', count: list.length },
             { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length },
@@ -389,19 +384,21 @@ export default function AdminClient({
                 background: tab === item.key ? 'rgba(228, 98, 23, 0.12)' : 'transparent',
                 color: tab === item.key ? 'var(--accent)' : 'var(--ink-soft)',
                 fontWeight: tab === item.key ? 600 : 500, fontSize: 13, userSelect: 'none',
+                whiteSpace: 'nowrap',
               }}
             >
               <span>{item.label}</span>
-              <span style={{
+              <span className="admin-tab-count" style={{
                 fontFamily: 'var(--font-mono)', fontSize: 11, padding: '2px 8px', borderRadius: 999,
                 background: tab === item.key ? 'var(--accent)' : 'var(--bg-elev)',
                 color: tab === item.key ? '#14181C' : 'var(--ink-mute)', minWidth: 28, textAlign: 'center' as const,
+                marginLeft: 8,
               }}>{item.count}</span>
             </li>
           ))}
         </ul>
 
-        <div style={{ height: 1, background: 'var(--line)', margin: '16px 0' }} />
+        <div className="admin-sidebar-divider" style={{ height: 1, background: 'var(--line)', margin: '16px 0' }} />
 
         <button
           onClick={() => setTab('nueva')}
@@ -411,14 +408,15 @@ export default function AdminClient({
             color: tab === 'nueva' ? 'var(--accent)' : '#14181C',
             borderRadius: 6, fontWeight: 700, fontSize: 13,
             border: `1px solid ${tab === 'nueva' ? 'var(--accent)' : 'transparent'}`,
-            cursor: 'pointer', width: '100%', fontFamily: 'var(--font-sans)',
+            cursor: 'pointer', fontFamily: 'var(--font-sans)',
+            whiteSpace: 'nowrap', flexShrink: 0,
           }}
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-          Nueva función
+          Nueva
         </button>
 
-        <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div className="admin-sidebar-footer" style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-mute)', fontSize: 12, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' as const, padding: '6px 12px', borderRadius: 4 }}>
             ← Ir al sitio
           </Link>
@@ -432,7 +430,7 @@ export default function AdminClient({
       </aside>
 
       {/* ═══ MAIN ══════════════════════════════════════════════════════════ */}
-      <main style={{ padding: '28px 40px 80px', minWidth: 0 }}>
+      <main className="admin-main">
 
         {/* ── FUNCIONES ── */}
         {tab === 'funciones' && (
@@ -441,7 +439,7 @@ export default function AdminClient({
               <button onClick={() => setTab('nueva')} style={btnPrimary}>+ Nueva función</button>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+            <div className="admin-stats-4">
               {statCard('Total proyectadas', pastList.length, `+${list.length} en total`)}
               {statCard(
                 'Próxima',
@@ -461,7 +459,8 @@ export default function AdminClient({
             </div>
 
             <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
-              <div style={tblHeadStyle}>
+            <div className="admin-table-scroll">
+              <div className="admin-fn-head" style={tblHeadInline}>
                 <span />
                 <span>Película</span>
                 <span>Estado</span>
@@ -483,12 +482,12 @@ export default function AdminClient({
 
                 return (
                   <div key={s.id} style={{ borderBottom: i === list.length - 1 ? 'none' : '1px solid var(--line)' }}>
-                    <div style={{ ...tblRowStyle }}>
+                    <div className="admin-fn-row" style={tblRowInline}>
                       {/* Poster */}
-                      <div style={posterStyle(s)} />
+                      <div className="admin-fn-poster" style={posterStyle(s)} />
 
                       {/* Title + meta */}
-                      <div style={{ minWidth: 0 }}>
+                      <div className="admin-fn-title" style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.25, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {isOpen
                             ? <em style={{ fontStyle: 'italic', color: 'var(--ink-mute)' }}>&ldquo;a definir por votación&rdquo;</em>
@@ -504,7 +503,7 @@ export default function AdminClient({
                       </div>
 
                       {/* Status pill */}
-                      <span style={{
+                      <span className="admin-fn-status" style={{
                         display: 'inline-flex', alignItems: 'center', gap: 6,
                         fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.14em',
                         textTransform: 'uppercase', padding: '4px 10px', borderRadius: 999,
@@ -516,7 +515,7 @@ export default function AdminClient({
                       </span>
 
                       {/* Date */}
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em' }}>
+                      <div className="admin-fn-date" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.04em' }}>
                         {fmtDate(s.scheduledDate)}
                         <span style={{ display: 'block', fontSize: 10.5, color: 'var(--ink-mute)', letterSpacing: '0.08em', marginTop: 2 }}>
                           {[s.hour, s.location].filter(Boolean).join(' · ')}
@@ -524,7 +523,7 @@ export default function AdminClient({
                       </div>
 
                       {/* Curator */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div className="admin-fn-curator" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {s.curatedBy && <Avatar name={s.curatedBy} size="sm" />}
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {s.curatedBy || '—'}
@@ -532,18 +531,20 @@ export default function AdminClient({
                       </div>
 
                       {/* Rating */}
-                      {s.avgScore ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <span style={{ color: '#E4F277', fontSize: 14 }}>★</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 13 }}>{s.avgScore.toFixed(1)}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>/ 5</span>
-                        </div>
-                      ) : (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>—</span>
-                      )}
+                      <div className="admin-fn-rating">
+                        {s.avgScore ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ color: '#E4F277', fontSize: 14 }}>★</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: 13 }}>{s.avgScore.toFixed(1)}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>/ 5</span>
+                          </div>
+                        ) : (
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>—</span>
+                        )}
+                      </div>
 
                       {/* Actions */}
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <div className="admin-fn-actions" style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
                         {isOpen ? (
                           <button
                             onClick={() => handleOpenAssign(s.id)}
@@ -634,6 +635,7 @@ export default function AdminClient({
                 );
               })}
             </div>
+            </div>
           </section>
         )}
 
@@ -646,7 +648,7 @@ export default function AdminClient({
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Sin sugerencias todavía.</div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <div className="admin-recs-grid">
               {recList.map((r) => (
                 <div key={r.id} style={{
                   background: r.featured
@@ -716,14 +718,15 @@ export default function AdminClient({
               <button style={btnPrimary}>+ Crear usuario</button>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+            <div className="admin-stats-3">
               {statCard('Total miembros', userList.length)}
               {statCard('Admins', <span style={{ color: 'var(--accent)' }}>{adminCount}</span>, userList.filter((u) => u.role === 'admin').map((u) => u.username).join(' · ') || '—')}
               {statCard('Usuarios regulares', userList.length - adminCount)}
             </div>
 
             <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 120px 120px 80px', alignItems: 'center', gap: 16, padding: '0 18px', height: 38, background: '#0F1216', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'var(--ink-mute)' }}>
+            <div className="admin-table-scroll">
+              <div className="admin-usr-head" style={{ padding: '0 18px', background: '#0F1216', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'var(--ink-mute)' }}>
                 <span>Miembro</span>
                 <span>Rol</span>
                 <span>Toggle</span>
@@ -731,15 +734,15 @@ export default function AdminClient({
               </div>
 
               {userList.map((u, i) => (
-                <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.6fr 120px 120px 80px', alignItems: 'center', gap: 16, padding: '0 18px', height: 64, borderBottom: i === userList.length - 1 ? 'none' : '1px solid var(--line)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div key={u.id} className="admin-usr-row" style={{ padding: '0 18px', borderBottom: i === userList.length - 1 ? 'none' : '1px solid var(--line)' }}>
+                  <div className="admin-usr-member">
                     <Avatar name={u.username} size="md" />
-                    <div>
+                    <div className="admin-usr-member-text">
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{u.username}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '0.06em' }}>@{u.username}</div>
                     </div>
                   </div>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', padding: '3px 8px', borderRadius: 3, background: u.role === 'admin' ? 'var(--accent)' : 'var(--bg-card)', color: u.role === 'admin' ? '#14181C' : 'var(--ink-soft)', border: u.role === 'admin' ? 'none' : '1px solid var(--line)', width: 'fit-content' }}>
+                  <span className="admin-usr-role" style={{ display: 'inline-flex', alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.1em', padding: '3px 8px', borderRadius: 3, background: u.role === 'admin' ? 'var(--accent)' : 'var(--bg-card)', color: u.role === 'admin' ? '#14181C' : 'var(--ink-soft)', border: u.role === 'admin' ? 'none' : '1px solid var(--line)', width: 'fit-content' }}>
                     {u.role}
                   </span>
                   <div style={{ display: 'inline-flex', background: '#0F1216', border: '1px solid var(--line)', borderRadius: 6, padding: 2, height: 28, width: 'fit-content' }}>
@@ -770,10 +773,11 @@ export default function AdminClient({
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-mute)' }}>Sin usuarios.</div>
               )}
             </div>
+            </div>
 
             <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, padding: 24 }}>
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 16px' }}>Nuevo usuario</p>
-              <form onSubmit={handleCreateUser} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 140px auto', gap: 12, alignItems: 'end' }}>
+              <form onSubmit={handleCreateUser} className="admin-user-form">
                 <div>
                   <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Usuario</label>
                   <input value={newUser.username} onChange={(e) => setNewUser((p) => ({ ...p, username: e.target.value }))} placeholder="nombre" required style={inp} />
@@ -805,7 +809,7 @@ export default function AdminClient({
             </div>
 
             <form onSubmit={handleCreate}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'flex-start' }}>
+              <div className="admin-nueva-grid">
                 <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, padding: 24 }}>
 
                   {/* Mode switch */}
