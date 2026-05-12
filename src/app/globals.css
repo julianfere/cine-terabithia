@@ -976,6 +976,20 @@ textarea::placeholder {
   align-items: flex-start;
 }
 
+.admin-nueva-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.admin-nueva-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
 .admin-user-form {
   display: grid;
   grid-template-columns: 1fr 1fr 140px auto;
@@ -994,6 +1008,18 @@ textarea::placeholder {
     padding: 20px 20px 60px;
   }
   .admin-nueva-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-nueva-preview {
+    display: none;
+  }
+}
+
+@media (max-width: 500px) {
+  .admin-nueva-mode-switch {
+    grid-template-columns: 1fr;
+  }
+  .admin-nueva-fields {
     grid-template-columns: 1fr;
   }
 }

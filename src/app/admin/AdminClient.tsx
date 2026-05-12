@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import type { ScreeningRow, RecommendationRow } from '@/lib/data';
@@ -30,7 +29,6 @@ export default function AdminClient({
   const [recList, setRecList] = useState(recs);
   const [userList, setUserList] = useState(initialUsers);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-  const router = useRouter();
 
   const [form, setForm] = useState({
     title: '', year: '', director: '', genre: '', duration: '', synopsis: '',
@@ -142,7 +140,8 @@ export default function AdminClient({
       }),
     });
     if (res.ok) {
-      router.refresh();
+      const created = await res.json();
+      setList((prev) => [created, ...prev]);
       setTab('funciones');
       setOpenVoting(false);
       setForm({ title: '', year: '', director: '', genre: '', duration: '', synopsis: '', scheduledDate: '', hour: '21:00', status: 'upcoming', snack: '', location: '', curatedBy: '', posterPath: null, tmdbId: null });
@@ -180,7 +179,11 @@ export default function AdminClient({
         curatedBy: quickForm.curatedBy, status: 'upcoming',
       }),
     });
-    if (res.ok) { setQuickRec(null); router.refresh(); }
+    if (res.ok) {
+      const created = await res.json();
+      setList((prev) => [created, ...prev]);
+      setQuickRec(null);
+    }
   };
 
   const handleOpenEdit = (s: ScreeningRow) => {
@@ -810,7 +813,7 @@ export default function AdminClient({
                 <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, padding: 24 }}>
 
                   {/* Mode switch */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+                  <div className="admin-nueva-mode-switch">
                     {[
                       { label: 'Programar directa', desc: 'Elegís la película y la fecha ahora.', val: false },
                       { label: 'Abrir a votación', desc: 'El club vota entre las sugerencias.', val: true },
@@ -832,7 +835,7 @@ export default function AdminClient({
 
                   {!openVoting && <MovieSearch onSelect={handleMovieSelect} placeholder="Buscar película en TMDB…" />}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 16 }}>
+                  <div className="admin-nueva-fields">
                     <div style={{ gridColumn: '1 / -1' }}>
                       <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 6 }}>Fecha *</label>
                       <DatePicker value={form.scheduledDate} onChange={(v) => setForm((p) => ({ ...p, scheduledDate: v }))} style={inp} />
@@ -877,7 +880,7 @@ export default function AdminClient({
                 </div>
 
                 {/* Live preview */}
-                <div style={{ position: 'sticky', top: 90 }}>
+                <div className="admin-nueva-preview" style={{ position: 'sticky', top: 90 }}>
                   <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden' }}>
                     <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: '#0F1216', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'var(--ink-mute)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>Vista previa</span>
