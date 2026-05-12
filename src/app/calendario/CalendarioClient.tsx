@@ -137,12 +137,12 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
                 <div style={{ width: 50 }}>
                   <Poster label={f.title ? f.title.toUpperCase().slice(0, 8) : 'VOTAR'} hue={f.posterHue ?? 120} posterPath={f.posterPath} />
                 </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 18, lineHeight: 1.1 }}>
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, lineHeight: 1.2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                     {f.title ? (
                       <>
                         {f.title}
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>
                           &apos;{f.year ? String(f.year).slice(2) : '??'}
                         </span>
                       </>
@@ -151,7 +151,7 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
                     )}
                   </div>
                   {f.title && (
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                       dir. {f.director} · {f.genre}
                     </div>
                   )}

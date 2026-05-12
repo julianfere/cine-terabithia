@@ -1185,11 +1185,32 @@ button {
   color: inherit;
 }
 
+.cal-list-row > div:nth-child(3) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cal-list-row > div:nth-child(3) > div:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cal-list-row > div:nth-child(3) > div:last-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 600px) {
   .cal-list-row {
-    grid-template-columns: 36px 40px 1fr 108px;
+    grid-template-columns: 36px 40px 1fr auto;
     gap: 8px;
     padding: 12px 12px;
+  }
+
+  .cal-list-row > div:nth-child(3) > div:first-child {
+    font-size: 14px;
   }
 
   .cal-col-location,

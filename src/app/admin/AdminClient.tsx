@@ -494,11 +494,8 @@ export default function AdminClient({
                             : <>{s.title}<span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 4 }}>&apos;{(s.year ?? '').toString().slice(-2)}</span></>
                           }
                         </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-mute)', letterSpacing: '0.06em', display: 'flex', gap: 4, overflow: 'hidden' }}>
-                          {[s.director, s.duration ? `${s.duration} min` : null, s.genre].filter(Boolean).map((v, j) => (
-                            <span key={j}>{j > 0 && <span style={{ color: 'var(--ink-dim)', margin: '0 2px' }}>·</span>}{v}</span>
-                          ))}
-                          {isOpen && <span>Votación abierta</span>}
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--ink-mute)', letterSpacing: '0.06em', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                          {isOpen ? 'Votación abierta' : [s.director, s.duration ? `${s.duration} min` : null, s.genre].filter(Boolean).join(' · ')}
                         </div>
                       </div>
 
