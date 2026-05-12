@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { movies, screenings, scores } from '@/db/schema';
 import { eq, desc, avg, count } from 'drizzle-orm';
 import { auth } from '@/auth';
+import { sendPushToAll } from '@/lib/push';
 
 export async function GET() {
   const db = getDb();
@@ -80,6 +81,23 @@ export async function POST(req: NextRequest) {
     notes: body.notes,
     createdAt: Date.now(),
   }).returning();
+
+  const date = body.scheduledDate ?? '';
+  const hour = body.hour ? ` a las ${body.hour}` : '';
+
+  if (movieId && body.title) {
+    sendPushToAll({
+      title: 'Nueva función en Cine Terabithia',
+      body: `${body.title}${body.year ? ` (${body.year})` : ''} — ${date}${hour}`,
+      url: '/',
+    }).catch(() => {});
+  } else {
+    sendPushToAll({
+      title: '¡Nueva función para votar!',
+      body: `Se programó una función para el ${date} — elegí la película`,
+      url: '/votacion',
+    }).catch(() => {});
+  }
 
   return NextResponse.json(result[0], { status: 201 });
 }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/Avatar';
 import { AVATARS } from '@/lib/avatars';
 import { invalidateProfiles } from '@/lib/useProfiles';
+import { PushNotificationsToggle } from '@/components/PushNotificationsToggle';
 
 export default function PerfilClient({
   username,
@@ -128,6 +129,8 @@ export default function PerfilClient({
           La primera opción usa tus iniciales con un color único.
         </div>
       </div>
+
+      <PushNotificationsToggle />
 
       {/* Save button */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

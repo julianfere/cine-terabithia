@@ -86,3 +86,12 @@ export const attendances = pgTable('attendances', {
 }, (t) => ({
   uniqueAttendance: unique().on(t.screeningId, t.userId),
 }));
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+});

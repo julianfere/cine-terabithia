@@ -14,6 +14,10 @@ export const metadata: Metadata = {
     title: 'CineT',
   },
   icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
     apple: '/icons/icon-192.png',
   },
 };
