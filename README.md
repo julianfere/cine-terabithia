@@ -10,16 +10,19 @@ Plataforma de gestión para un club de cine entre amigos. Permite coordinar func
 - **Ranking**: ver las películas vistas ordenadas por puntaje promedio
 - **Perfiles**: elegir nickname y avatar
 - **Admin**: crear/editar funciones, asignar películas, administrar usuarios
+- **PWA**: instalable en dispositivos móviles y desktop, funciona offline
+- **Push notifications**: notificaciones al programar o reprogramar una función
 
 ## Stack
 
 | Capa | Tecnología |
 |------|-----------|
 | Framework | Next.js 16 (App Router) + React 19 + TypeScript |
-| Base de datos | SQLite via `better-sqlite3` |
+| Base de datos | PostgreSQL (Supabase) |
 | ORM | Drizzle ORM + Drizzle Kit |
 | Auth | NextAuth v5 (Credentials + JWT) |
 | API externa | TMDB (posters, metadatos de películas) |
+| Push notifications | Web Push (VAPID) via `web-push` |
 | Estilos | CSS inline con variables custom |
 
 ## Variables de entorno
@@ -27,19 +30,25 @@ Plataforma de gestión para un club de cine entre amigos. Permite coordinar func
 Crear un archivo `.env.local` en la raíz:
 
 ```env
-NEXTAUTH_SECRET=      # clave para firmar los JWT
+NEXTAUTH_SECRET=           # clave para firmar los JWT
 NEXTAUTH_URL=http://localhost:3000
-TMDB_API_KEY=         # clave de api.themoviedb.org
-DATABASE_URL=./cine.db
+TMDB_API_KEY=              # clave de api.themoviedb.org
+DATABASE_URL=              # connection string de PostgreSQL
+CRON_SECRET=               # clave para proteger el endpoint de cron
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=   # clave pública VAPID (generada con web-push)
+VAPID_PRIVATE_KEY=              # clave privada VAPID
+VAPID_EMAIL=                    # email de contacto para el protocolo Web Push
+```
+
+Para generar las claves VAPID:
+```bash
+node -e "const wp = require('web-push'); const k = wp.generateVAPIDKeys(); console.log(k)"
 ```
 
 ## Instalación y uso
 
 ```bash
 npm install
-
-# Inicializar la base de datos (crea tablas y usuario admin)
-node seed.cjs
 
 # Desarrollo
 npm run dev
@@ -51,12 +60,10 @@ npm start
 
 La app queda en `http://localhost:3000`.
 
-## Usuario admin por defecto
-
-| Campo | Valor |
-|-------|-------|
-| Username | `admin` |
-| Password | `terabithia2024` |
+Para aplicar cambios de esquema a la base de datos:
+```bash
+DATABASE_URL=<url> npx drizzle-kit push
+```
 
 ## Estructura del proyecto
 
@@ -73,14 +80,22 @@ src/
 │   ├── perfil/               # Perfil de usuario
 │   ├── admin/                # Panel de administración
 │   └── api/                  # API routes
-├── components/               # Componentes compartidos
+│       ├── screenings/       # CRUD de funciones (dispara push al crear/editar)
+│       ├── push/subscribe/   # Suscripción a notificaciones push
+│       └── cron/             # Jobs automáticos (actualización de estados)
+├── components/
+│   ├── PushNotificationsToggle.tsx  # Toggle de notificaciones push
+│   └── ...
 ├── db/
 │   ├── schema.ts             # Esquema Drizzle
-│   └── index.ts              # Conexión y migraciones
+│   └── index.ts              # Conexión a PostgreSQL
 └── lib/
     ├── data.ts               # Queries reutilizables
+    ├── push.ts               # Helper para enviar push notifications
     ├── profiles.ts           # Helpers de perfil
     └── avatars.tsx           # Definición de avatares
+public/
+└── sw.js                     # Service worker (cache + push notifications)
 ```
 
 ## Base de datos
@@ -92,7 +107,7 @@ src/
 | `screenings` | Funciones (upcoming / past) |
 | `scores` | Calificaciones por función |
 | `recommendations` | Propuestas de la watchlist |
-| `recommendationVotes` | Votos de la watchlist |
-| `screeningVotes` | Votos para la próxima función |
-
-Las migraciones se aplican automáticamente al iniciar el servidor (`db/index.ts`).
+| `recommendation_votes` | Votos de la watchlist |
+| `screening_votes` | Votos para la próxima función |
+| `attendances` | Asistencias a funciones |
+| `push_subscriptions` | Suscripciones a notificaciones push |
