@@ -433,24 +433,6 @@ export default function AdminClient({
           ))}
         </ul>
 
-        <div className="admin-sidebar-divider" style={{ height: 1, background: 'var(--line)', margin: '16px 0' }} />
-
-        <button
-          onClick={() => setTab('nueva')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
-            background: tab === 'nueva' ? 'rgba(228, 98, 23, 0.12)' : 'var(--accent)',
-            color: tab === 'nueva' ? 'var(--accent)' : '#14181C',
-            borderRadius: 6, fontWeight: 700, fontSize: 13,
-            border: `1px solid ${tab === 'nueva' ? 'var(--accent)' : 'transparent'}`,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)',
-            whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-          Nueva
-        </button>
-
         <div className="admin-sidebar-footer" style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-mute)', fontSize: 12, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', textTransform: 'uppercase' as const, padding: '6px 12px', borderRadius: 4 }}>
             ← Ir al sitio
