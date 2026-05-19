@@ -53,12 +53,11 @@ self.addEventListener('fetch', (e) => {
   // Skip non-GET and cross-origin
   if (request.method !== 'GET' || url.origin !== location.origin) return;
 
-  // Cache-first for static assets
-  if (
-    url.pathname.startsWith('/_next/static/') ||
-    url.pathname.startsWith('/icons/') ||
-    url.pathname === '/icon.svg'
-  ) {
+  // Next.js manages its own chunks via immutable HTTP headers — don't intercept
+  if (url.pathname.startsWith('/_next/')) return;
+
+  // Cache-first for app icons
+  if (url.pathname.startsWith('/icons/') || url.pathname === '/icon.svg') {
     e.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((res) => {
         const clone = res.clone();
