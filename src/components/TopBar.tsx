@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import { Avatar } from './Avatar';
+import PwaInstallButton from './PwaInstallButton';
 
 type UserSession = { name?: string | null; role?: string };
 type MyProfile = { displayName: string | null; avatar: string | null } | null;
@@ -55,6 +56,15 @@ function IconLogout() {
   );
 }
 
+function IconBell() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--ink-mute)' }}>
+      <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
+}
+
 function IconChevron({ open }: { open: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 12, height: 12, color: 'var(--ink-mute)', transition: 'transform 0.18s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
@@ -73,6 +83,7 @@ export default function TopBar() {
   const [profile, setProfile] = useState<MyProfile>(null);
   const [stats, setStats] = useState<Stats>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'ok' | 'error' | 'no_sub'>('idle');
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -120,6 +131,7 @@ export default function TopBar() {
         </nav>
 
         <div className="topbar-right">
+          <PwaInstallButton />
           {isAdmin && (
             <Link
               href="/admin"
@@ -190,6 +202,35 @@ export default function TopBar() {
                   <IconPalette />
                   <span>Personalizar avatar</span>
                 </Link>
+
+                <button
+                  className="pm-item"
+                  disabled={testNotifState === 'loading'}
+                  onClick={async () => {
+                    setTestNotifState('loading');
+                    try {
+                      const res = await fetch('/api/push/test-me', { method: 'POST' });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        setTestNotifState(data.error === 'no_subscriptions' ? 'no_sub' : 'error');
+                      } else {
+                        setTestNotifState('ok');
+                      }
+                    } catch {
+                      setTestNotifState('error');
+                    }
+                    setTimeout(() => setTestNotifState('idle'), 3000);
+                  }}
+                >
+                  <IconBell />
+                  <span style={{ flex: 1 }}>
+                    {testNotifState === 'loading' && 'Enviando...'}
+                    {testNotifState === 'ok' && '¡Notificación enviada!'}
+                    {testNotifState === 'error' && 'Error al enviar'}
+                    {testNotifState === 'no_sub' && 'Activá las notificaciones primero'}
+                    {testNotifState === 'idle' && 'Probar notificaciones'}
+                  </span>
+                </button>
 
                 <div className="pm-divider" />
 
