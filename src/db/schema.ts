@@ -95,3 +95,16 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   auth: text('auth').notNull(),
   createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 });
+
+export const notificationLogs = pgTable('notification_logs', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  url: text('url').notNull().default('/'),
+  sentByUserId: integer('sent_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  recipientType: text('recipient_type').notNull().default('all'), // 'all' | 'custom'
+  recipientUserIds: text('recipient_user_ids'), // JSON array when custom
+  sent: integer('sent').notNull().default(0),
+  failed: integer('failed').notNull().default(0),
+  sentAt: bigint('sent_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+});

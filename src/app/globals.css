@@ -1248,16 +1248,16 @@ button {
 /* ─── ADMIN USERS TABLE ─── */
 .admin-usr-head {
   display: grid;
-  grid-template-columns: 1.6fr 120px 120px 80px;
+  grid-template-columns: 1.6fr 120px 120px 56px 80px;
   align-items: center;
   gap: 16px;
   height: 38px;
-  min-width: 480px;
+  min-width: 520px;
 }
 
 .admin-usr-row {
   display: grid;
-  grid-template-columns: 1.6fr 120px 120px 80px;
+  grid-template-columns: 1.6fr 120px 120px 56px 80px;
   align-items: center;
   gap: 16px;
   height: 64px;
@@ -1331,44 +1331,76 @@ button {
   }
 
   .admin-fn-row {
-    grid-template-columns: 52px 1fr auto;
-    grid-template-rows: auto auto;
+    grid-template-columns: 52px 1fr;
+    grid-template-rows: auto auto auto auto;
+    grid-auto-rows: 0;
     height: auto;
     min-width: 0;
-    padding: 12px 16px;
-    gap: 6px 10px;
+    padding: 14px 16px;
+    column-gap: 12px;
+    row-gap: 0;
     align-items: start;
+    overflow: hidden;
   }
 
   .admin-fn-poster {
     grid-column: 1;
-    grid-row: 1 / 3;
+    grid-row: 1 / 5;
     align-self: start;
+    width: 52px !important;
+    height: 74px !important;
   }
 
   .admin-fn-title {
     grid-column: 2;
     grid-row: 1;
+    padding-bottom: 5px;
   }
 
   .admin-fn-status {
     grid-column: 2;
     grid-row: 2;
-    align-self: center;
+    align-self: start;
+    padding-bottom: 6px;
   }
 
-  .admin-fn-date,
+  .admin-fn-date {
+    display: block !important;
+    grid-column: 2;
+    grid-row: 3;
+    padding-bottom: 10px;
+  }
+
+  .admin-fn-date span {
+    display: inline !important;
+    margin-top: 0 !important;
+    font-size: 12px !important;
+  }
+
+  .admin-fn-date span:not(:empty)::before {
+    content: ' · ';
+  }
+
   .admin-fn-curator,
   .admin-fn-rating {
     display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: hidden !important;
+    grid-row: 5 !important;
+    grid-column: 1 !important;
   }
 
   .admin-fn-actions {
-    grid-column: 3;
-    grid-row: 1 / 3;
-    flex-direction: column !important;
+    grid-column: 2;
+    grid-row: 4;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    gap: 4px !important;
+    gap: 6px !important;
   }
 }

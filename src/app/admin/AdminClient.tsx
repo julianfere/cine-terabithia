@@ -16,15 +16,23 @@ function fmtDateLong(d: string) {
 }
 
 type UserRow = { id: number; username: string; role: string; createdAt: number | null };
+type LogRow = { id: number; title: string; body: string; url: string; recipientType: string; recipientUserIds: string | null; sent: number; failed: number; sentAt: number | null };
 
 export default function AdminClient({
-  screenings, recs, initialUsers,
+  screenings, recs, initialUsers, subscribedUserIds, initialLogs,
 }: {
   screenings: ScreeningRow[];
   recs: RecommendationRow[];
   initialUsers: UserRow[];
+  subscribedUserIds: number[];
+  initialLogs: LogRow[];
 }) {
-  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios'>('funciones');
+  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones'>('funciones');
+  const subscribedSet = new Set(subscribedUserIds);
+  const [logs, setLogs] = useState<LogRow[]>(initialLogs);
+  const [compose, setCompose] = useState({ title: '', body: '', url: '/', recipients: 'all' as 'all' | number[] });
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
   const [list, setList] = useState(screenings);
   const [recList, setRecList] = useState(recs);
   const [userList, setUserList] = useState(initialUsers);
@@ -48,6 +56,13 @@ export default function AdminClient({
     title: '', year: '', director: '', genre: '', duration: '', synopsis: '',
     posterPath: null as string | null, tmdbId: null as string | number | null,
   });
+
+  // ── helpers ───────────────────────────────────────────────────────────────
+
+  const fmtTs = (ts: number | null) => {
+    if (!ts) return '—';
+    return new Date(ts).toLocaleString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
 
   // ── handlers ──────────────────────────────────────────────────────────────
 
@@ -275,6 +290,22 @@ export default function AdminClient({
     if (res.ok) setUserList((prev) => prev.map((u) => u.id === id ? { ...u, role: newRole } : u));
   };
 
+  const handleSendNotification = async (payload: { title: string; body: string; url: string; recipients: 'all' | number[] }) => {
+    setSending(true);
+    setSendResult(null);
+    const res = await fetch('/api/push/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setSendResult({ sent: data.sent, failed: data.failed });
+      setLogs((prev) => [{ id: data.id, title: payload.title, body: payload.body, url: payload.url, recipientType: payload.recipients === 'all' ? 'all' : 'custom', recipientUserIds: payload.recipients === 'all' ? null : JSON.stringify(payload.recipients), sent: data.sent, failed: data.failed, sentAt: Date.now() }, ...prev]);
+      setCompose({ title: '', body: '', url: '/', recipients: 'all' });
+    }
+    setSending(false);
+  };
+
   // ── computed ───────────────────────────────────────────────────────────────
 
   const pastList = list.filter((s) => s.status === 'past');
@@ -377,6 +408,7 @@ export default function AdminClient({
             { key: 'funciones' as const, label: 'Funciones', count: list.length },
             { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length },
             { key: 'usuarios' as const, label: 'Usuarios', count: userList.length },
+            { key: 'notificaciones' as const, label: 'Notificaciones', count: subscribedUserIds.length },
           ]).map((item) => (
             <li
               key={item.key}
@@ -730,6 +762,7 @@ export default function AdminClient({
                 <span>Miembro</span>
                 <span>Rol</span>
                 <span>Toggle</span>
+                <span style={{ textAlign: 'center' as const }}>Notis</span>
                 <span style={{ textAlign: 'right' as const }}>Acción</span>
               </div>
 
@@ -754,6 +787,14 @@ export default function AdminClient({
                       onClick={() => u.role !== 'user' && handleToggleRole(u.id, u.role)}
                       style={{ background: u.role === 'user' ? 'var(--bg-card)' : 'transparent', border: 'none', borderRadius: 4, color: u.role === 'user' ? 'var(--ink)' : 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase' as const, padding: '0 10px', cursor: u.role !== 'user' ? 'pointer' : 'default' }}
                     >User</button>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span title={subscribedSet.has(u.id) ? 'Notificaciones activas' : 'Sin notificaciones'}>
+                      <svg viewBox="0 0 24 24" fill={subscribedSet.has(u.id) ? 'var(--accent)' : 'none'} stroke={subscribedSet.has(u.id) ? 'var(--accent)' : 'var(--line)'} strokeWidth={1.8} style={{ width: 16, height: 16 }}>
+                        <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 01-3.46 0" />
+                      </svg>
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button
@@ -797,6 +838,115 @@ export default function AdminClient({
               </form>
               {userError && <p style={{ marginTop: 10, fontSize: 13, color: 'var(--hot)', margin: '10px 0 0' }}>{userError}</p>}
             </div>
+          </section>
+        )}
+
+        {/* ── NOTIFICACIONES ── */}
+        {tab === 'notificaciones' && (
+          <section>
+            {pageHead('Admin / Notificaciones', 'Notificaciones push')}
+
+            {/* Compose */}
+            <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 12, padding: 24, marginBottom: 32 }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 16px' }}>Nueva notificación</p>
+
+              <div style={{ display: 'grid', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Título</label>
+                    <input value={compose.title} onChange={(e) => setCompose((p) => ({ ...p, title: e.target.value }))} placeholder="Ej: Nueva función" style={inp} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase' as const, marginBottom: 6 }}>URL destino</label>
+                    <input value={compose.url} onChange={(e) => setCompose((p) => ({ ...p, url: e.target.value }))} placeholder="/" style={inp} />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Mensaje</label>
+                  <textarea value={compose.body} onChange={(e) => setCompose((p) => ({ ...p, body: e.target.value }))} placeholder="Texto de la notificación..." rows={2} style={{ ...inp, resize: 'vertical' as const }} />
+                </div>
+
+                {/* Recipients */}
+                <div>
+                  <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Destinatarios</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setCompose((p) => ({ ...p, recipients: 'all' }))}
+                      style={{ height: 30, padding: '0 14px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer', background: compose.recipients === 'all' ? 'var(--accent)' : 'transparent', color: compose.recipients === 'all' ? '#14181C' : 'var(--ink-mute)', borderColor: compose.recipients === 'all' ? 'var(--accent)' : 'var(--line)' }}
+                    >
+                      Todos ({subscribedUserIds.length})
+                    </button>
+                    {userList.filter((u) => subscribedSet.has(u.id)).map((u) => {
+                      const selected = Array.isArray(compose.recipients) && compose.recipients.includes(u.id);
+                      return (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => setCompose((p) => {
+                            const current = p.recipients === 'all' ? [] : [...p.recipients];
+                            return { ...p, recipients: selected ? current.filter((id) => id !== u.id) : [...current, u.id] };
+                          })}
+                          style={{ height: 30, padding: '0 12px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, background: selected ? 'rgba(228,98,23,0.12)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--ink-mute)', borderColor: selected ? 'var(--accent)' : 'var(--line)' }}
+                        >
+                          <Avatar name={u.username} size="sm" />
+                          {u.username}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+                  <button
+                    type="button"
+                    disabled={sending || !compose.title.trim() || !compose.body.trim() || (Array.isArray(compose.recipients) && compose.recipients.length === 0)}
+                    onClick={() => handleSendNotification(compose)}
+                    style={{ ...btnPrimary, opacity: sending ? 0.6 : 1 }}
+                  >
+                    {sending ? 'Enviando...' : 'Enviar'}
+                  </button>
+                  {sendResult && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: sendResult.failed === 0 ? '#4ade80' : 'var(--hot)' }}>
+                      ✓ {sendResult.sent} enviadas{sendResult.failed > 0 ? `, ${sendResult.failed} fallidas` : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* History */}
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 12px' }}>Historial</p>
+            {logs.length === 0 ? (
+              <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Sin notificaciones enviadas aún.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {logs.map((log) => (
+                  <div key={log.id} style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, padding: '14px 18px', display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'start' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{log.title}</div>
+                      <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 8 }}>{log.body}</div>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)' }}>{fmtTs(log.sentAt)}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: log.recipientType === 'all' ? 'var(--ink-mute)' : 'var(--accent)' }}>
+                          {log.recipientType === 'all' ? 'Todos' : `${(JSON.parse(log.recipientUserIds ?? '[]') as number[]).length} usuarios`}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#4ade80' }}>{log.sent} enviadas</span>
+                        {log.failed > 0 && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--hot)' }}>{log.failed} fallidas</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSendNotification({ title: log.title, body: log.body, url: log.url, recipients: log.recipientType === 'all' ? 'all' : JSON.parse(log.recipientUserIds ?? '[]') })}
+                      disabled={sending}
+                      style={{ ...btnGhost, height: 32, fontSize: 12, padding: '0 12px', flexShrink: 0 }}
+                    >
+                      Reenviar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
