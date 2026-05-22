@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -24,12 +29,17 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "dotenv": "^17.4.2",
     "drizzle-kit": "^0.31.10",
+    "supabase": "^2.101.0",
     "typescript": "^5"
   },
   "packageManager": "pnpm@10.33.4",
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "sharp"],
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp"
+    ],
     "overrides": {
       "esbuild": ">=0.25.0",
       "postcss": ">=8.5.10"
