@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     status: body.status ?? 'upcoming',
     snack: body.snack,
     location: body.location,
-    curatedBy: body.curatedBy,
+    curatedBy: body.curatedBy || session.user?.name || null,
     notes: body.notes,
     createdAt: Date.now(),
   }).returning();

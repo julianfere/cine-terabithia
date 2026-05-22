@@ -698,7 +698,7 @@ export default function AdminClient({
                     )}
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
                       <button
-                        onClick={() => { setQuickRec(r); setQuickForm({ scheduledDate: '', hour: '21:00', location: '', snack: '', curatedBy: '' }); }}
+                        onClick={() => { setQuickRec(r); setQuickForm({ scheduledDate: '', hour: '21:00', location: '', snack: '', curatedBy: r.suggestedBy }); }}
                         style={{ height: 30, padding: '0 12px', background: 'var(--accent)', color: '#14181C', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
                       >
                         Programar
