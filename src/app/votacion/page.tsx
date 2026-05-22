@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Votación — Cine Terabithia' };
 import VotacionClient from './VotacionClient';
 import { getUpcomingScreening } from '@/lib/data';
 import { getDb } from '@/db';

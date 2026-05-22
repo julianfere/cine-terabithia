@@ -35,7 +35,7 @@ export default function CalendarioClient({ screenings }: { screenings: Screening
   return (
     <div className="page-enter shell" style={{ paddingTop: 32 }}>
       <SectionHeader
-        eyebrow={`${past.length} funciones · ${upcoming.length} próximas`}
+        eyebrow={`${past.length + upcoming.length} en total · ${upcoming.length} ${upcoming.length === 1 ? 'próxima' : 'próximas'}`}
         title={<>Funciones <em>proyectadas</em></>}
         action={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>

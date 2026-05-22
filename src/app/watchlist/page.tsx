@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Sugeridos — Cine Terabithia' };
 import { getRecommendations, getUserRecommendationVotes } from '@/lib/data';
 import WatchlistClient from './WatchlistClient';
 import { auth } from '@/auth';

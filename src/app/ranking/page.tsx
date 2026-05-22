@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Ranking — Cine Terabithia' };
 import { getPastScreenings } from '@/lib/data';
 import RankingClient from './RankingClient';
 

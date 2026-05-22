@@ -1,4 +1,5 @@
 export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Calendario — Cine Terabithia' };
 import { getAllScreenings } from '@/lib/data';
 import CalendarioClient from './CalendarioClient';
 
