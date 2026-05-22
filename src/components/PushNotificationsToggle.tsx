@@ -63,27 +63,30 @@ export function PushNotificationsToggle() {
     <div style={{ marginBottom: 36 }}>
       <div className="eyebrow" style={{ marginBottom: 10 }}>Notificaciones</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <button
-          className={`btn ${state === 'subscribed' ? '' : 'btn-primary'}`}
-          onClick={toggle}
-          disabled={busy || state === 'loading'}
-          style={{ minWidth: 200 }}
-        >
-          {busy
-            ? state === 'subscribed' ? 'Desactivando…' : 'Activando…'
-            : state === 'subscribed'
-              ? 'Desactivar notificaciones'
-              : 'Activar notificaciones'}
-        </button>
-        {state === 'subscribed' && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.06em' }}>
-            ✓ Activas
-          </span>
+        {state === 'subscribed' ? (
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={toggle}
+            disabled={busy}
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}
+          >
+            {busy ? 'Desactivando…' : '🔔 Notificaciones activas — desactivar'}
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={toggle}
+            disabled={busy || state === 'loading'}
+          >
+            {busy ? 'Activando…' : 'Activar notificaciones'}
+          </button>
         )}
       </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', marginTop: 6 }}>
-        Recibís avisos cuando se programa o reprograma una función.
-      </div>
+      {state !== 'subscribed' && (
+        <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--ink-mute)', marginTop: 8 }}>
+          Recibís avisos cuando se programa o reprograma una función.
+        </p>
+      )}
     </div>
   );
 }
