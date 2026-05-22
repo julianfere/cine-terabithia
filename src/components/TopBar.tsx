@@ -122,16 +122,26 @@ export default function TopBar() {
           </div>
         </Link>
 
-        <nav className="nav">
+        <nav
+          className="nav"
+          style={{
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
+        >
           {links.map(([href, label]) => (
-            <Link key={href} href={href} className={`nav-btn${isActive(href) ? ' active' : ''}`}>
+            <Link key={href} href={href} className={`nav-btn${isActive(href) ? ' active' : ''}`} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
               {label}
             </Link>
           ))}
         </nav>
 
         <div className="topbar-right">
-          <PwaInstallButton />
+          <span className="hide-mobile">
+            <PwaInstallButton />
+          </span>
           {isAdmin && (
             <Link
               href="/admin"
