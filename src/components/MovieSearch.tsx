@@ -19,6 +19,7 @@ export default function MovieSearch({ onSelect, placeholder = 'Buscar pel√≠cula‚
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function MovieSearch({ onSelect, placeholder = 'Buscar pel√≠cula‚
         const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`);
         const data = await res.json();
         setResults(data);
+        setFocusedIndex(-1);
         setOpen(data.length > 0);
       } finally {
         setFetching(false);
@@ -41,12 +43,20 @@ export default function MovieSearch({ onSelect, placeholder = 'Buscar pel√≠cula‚
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', keyHandler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', keyHandler);
+    };
   }, []);
 
   const handleSelect = async (r: SearchResult) => {
     setOpen(false);
+    setFocusedIndex(-1);
     setQuery(r.title);
     const res = await fetch(`/api/movies/${r.tmdbId}`);
     if (res.ok) {
@@ -64,7 +74,27 @@ export default function MovieSearch({ onSelect, placeholder = 'Buscar pel√≠cula‚
           value={query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => results.length > 0 && setOpen(true)}
+          onKeyDown={(e) => {
+            if (!open || results.length === 0) return;
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              setFocusedIndex(i => Math.min(i + 1, results.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setFocusedIndex(i => Math.max(i - 1, 0));
+            } else if (e.key === 'Enter' && focusedIndex >= 0) {
+              e.preventDefault();
+              handleSelect(results[focusedIndex]);
+            } else if (e.key === 'Escape') {
+              setOpen(false);
+              setFocusedIndex(-1);
+            }
+          }}
           placeholder={placeholder}
+          role="combobox"
+          aria-expanded={open}
+          aria-autocomplete="list"
+          aria-controls="tmdb-listbox"
           style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', padding: '10px 36px 10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' }}
         />
         <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: fetching ? 'var(--ink-mute)' : 'var(--accent)', fontSize: 16, pointerEvents: 'none' }}>
@@ -73,14 +103,16 @@ export default function MovieSearch({ onSelect, placeholder = 'Buscar pel√≠cula‚
       </div>
 
       {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+        <div id="tmdb-listbox" role="listbox" onMouseDown={(e) => e.preventDefault()} style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 200, background: 'var(--bg-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
           {results.map((r, i) => (
             <div
               key={r.tmdbId}
+              role="option"
+              aria-selected={focusedIndex === i}
               onClick={() => handleSelect(r)}
-              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer', borderBottom: i < results.length - 1 ? '1px solid var(--line)' : 'none', transition: 'background 0.1s' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', cursor: 'pointer', borderBottom: i < results.length - 1 ? '1px solid var(--line)' : 'none', transition: 'background 0.1s', background: focusedIndex === i ? 'var(--bg-hover)' : '' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = focusedIndex === i ? 'var(--bg-hover)' : '')}
             >
               {r.posterPath ? (
                 <img
