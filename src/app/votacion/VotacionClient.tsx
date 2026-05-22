@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import type { ScreeningRow } from '@/lib/data';
 import { Poster } from '@/components/Poster';
 import { Avatar, AvatarStack } from '@/components/Avatar';
@@ -73,10 +74,23 @@ export default function VotacionClient({ screening, candidates: initialCandidate
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
                 {screening.director && `dir. ${screening.director}`}{screening.duration ? ` · ${screening.duration} min` : ''}{screening.genre ? ` · ${screening.genre}` : ''}
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {formatDate(screening.scheduledDate)}{screening.hour ? ` · ${screening.hour}` : ''}
-                {screening.location ? ` · ${screening.location}` : ''}
+              <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '24px 0' }} />
+              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 4 }}>Cuándo</div>
+                  <div style={{ fontWeight: 700 }}>{formatDate(screening.scheduledDate)}</div>
+                  {screening.hour && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-mute)', marginTop: 2 }}>{screening.hour}</div>}
+                </div>
+                {screening.location && (
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 4 }}>Dónde</div>
+                    <div style={{ fontWeight: 700 }}>{screening.location}</div>
+                  </div>
+                )}
               </div>
+              <Link href={`/funciones/${screening.id}`} className="btn btn-primary btn-sm" style={{ marginTop: 24, display: 'inline-flex' }}>
+                Ver función completa →
+              </Link>
             </div>
           </div>
         </div>

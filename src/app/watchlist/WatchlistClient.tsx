@@ -22,6 +22,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const [newRec, setNewRec] = useState<NewRec>(emptyRec());
   const [editState, setEditState] = useState<EditState | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
   const sorted = useMemo(() => {
     const list = filter === 'mine' && username
@@ -29,6 +30,16 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       : [...recs];
     return list.sort((a, b) => b.votes - a.votes);
   }, [recs, filter, username]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sorted;
+    const q = search.toLowerCase();
+    return sorted.filter(r =>
+      r.title.toLowerCase().includes(q) ||
+      (r.director ?? '').toLowerCase().includes(q) ||
+      (r.genre ?? '').toLowerCase().includes(q)
+    );
+  }, [sorted, search]);
 
   const handleVote = async (id: number) => {
     if (!username) return;
@@ -116,9 +127,28 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
         action={username ? <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Recomendar</button> : undefined}
       />
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button className={`chip${filter === 'all' ? ' active' : ''}`} onClick={() => setFilter('all')}>Todas</button>
         {username && <button className={`chip${filter === 'mine' ? ' active' : ''}`} onClick={() => setFilter('mine')}>Mis sugerencias</button>}
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar película..."
+          style={{
+            background: 'var(--bg)', border: '1px solid var(--line)',
+            borderRadius: 'var(--radius-sm)', padding: '8px 12px',
+            fontSize: 13, color: 'var(--ink)', outline: 'none',
+            width: '100%', maxWidth: 320, boxSizing: 'border-box',
+          }}
+        />
+        {(search.trim() || filter === 'mine') && (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', marginTop: 8 }}>
+            {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+          </div>
+        )}
       </div>
 
       {showAdd && (
@@ -158,22 +188,28 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
         ))}
       </div>
 
-      {sorted.length === 0 && (
-        <div className="card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>
-            {filter === 'mine' ? 'Todavía no sugeriste ninguna película' : 'No hay sugerencias todavía'}
+      {filtered.length === 0 ? (
+        search.trim() ? (
+          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+            Sin resultados para &quot;{search}&quot;
           </div>
-          <p style={{ color: 'var(--ink-mute)', margin: '0 0 20px' }}>
-            {filter === 'mine' ? 'Usá el botón "Recomendar" para agregar tu primera sugerencia.' : 'Sé el primero en recomendar una película al club.'}
-          </p>
-          {username && filter !== 'mine' && (
-            <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Recomendar</button>
-          )}
-        </div>
-      )}
+        ) : (
+          <div className="card" style={{ padding: 48, textAlign: 'center' }}>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>
+              {filter === 'mine' ? 'Todavía no sugeriste ninguna película' : 'No hay sugerencias todavía'}
+            </div>
+            <p style={{ color: 'var(--ink-mute)', margin: '0 0 20px' }}>
+              {filter === 'mine' ? 'Usá el botón "Recomendar" para agregar tu primera sugerencia.' : 'Sé el primero en recomendar una película al club.'}
+            </p>
+            {username && filter !== 'mine' && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowAdd(true)}>+ Recomendar</button>
+            )}
+          </div>
+        )
+      ) : null}
 
       <div>
-        {sorted.map((r, idx) => (
+        {filtered.map((r, idx) => (
           <div
             key={r.id}
             className="wl-row"
