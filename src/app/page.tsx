@@ -156,13 +156,15 @@ export default async function Home() {
 
             {/* Right rail */}
             <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="card" style={{ padding: 16, borderLeft: '3px solid var(--accent)' }}>
-                <div className="eyebrow" style={{ marginBottom: 12 }}>Votación abierta</div>
-                <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px' }}>Elegí la próxima película</p>
-                <Link href="/votacion" className="btn btn-primary btn-sm" style={{ display: 'flex', justifyContent: 'center' }}>
-                  Votar ahora →
-                </Link>
-              </div>
+              {!upcoming?.title && (
+                <div className="card" style={{ padding: 16, borderLeft: '3px solid var(--accent)' }}>
+                  <div className="eyebrow" style={{ marginBottom: 12 }}>Votación abierta</div>
+                  <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 14px' }}>Elegí la próxima película</p>
+                  <Link href="/votacion" className="btn btn-primary btn-sm" style={{ display: 'flex', justifyContent: 'center' }}>
+                    Votar ahora →
+                  </Link>
+                </div>
+              )}
 
               <div className="card" style={{ padding: 16 }}>
                 <div className="eyebrow" style={{ marginBottom: 12 }}>Stats del club</div>
