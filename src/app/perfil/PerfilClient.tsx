@@ -5,15 +5,18 @@ import { Avatar } from '@/components/Avatar';
 import { AVATARS } from '@/lib/avatars';
 import { invalidateProfiles } from '@/lib/useProfiles';
 import { PushNotificationsToggle } from '@/components/PushNotificationsToggle';
+import { Toast } from '@/components/Toast';
 
 export default function PerfilClient({
   username,
   initialDisplayName,
   initialAvatar,
+  stats,
 }: {
   username: string;
   initialDisplayName: string | null;
   initialAvatar: string | null;
+  stats: { ticketCount: number; suggestions: number; avgScore: number | null };
 }) {
   const [displayName, setDisplayName] = useState(initialDisplayName ?? '');
   const [avatar, setAvatar] = useState<string | null>(initialAvatar);
@@ -130,6 +133,23 @@ export default function PerfilClient({
         </div>
       </div>
 
+      {/* Stats */}
+      <div style={{ marginBottom: 32 }}>
+        <div className="eyebrow" style={{ marginBottom: 16 }}>Tus estadísticas</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          {[
+            { label: 'Funciones', value: stats.ticketCount },
+            { label: 'Sugeridas', value: stats.suggestions },
+            { label: 'Promedio', value: stats.avgScore != null ? `${stats.avgScore.toFixed(1)} ★` : '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="card" style={{ padding: '16px 20px', textAlign: 'center' }}>
+              <div className="h-display" style={{ fontSize: 32, color: 'var(--accent)', marginBottom: 4 }}>{value}</div>
+              <div className="eyebrow" style={{ fontSize: 9 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <PushNotificationsToggle />
 
       {/* Save button */}
@@ -148,6 +168,7 @@ export default function PerfilClient({
           </span>
         )}
       </div>
+      <Toast message="✓ Cambios guardados" visible={saved} />
     </div>
   );
 }
