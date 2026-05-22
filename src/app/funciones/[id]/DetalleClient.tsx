@@ -8,6 +8,8 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Avatar } from '@/components/Avatar';
 import { Ticket } from '@/components/Ticket';
 import { useProfiles, resolveUser } from '@/lib/useProfiles';
+import { Toast } from '@/components/Toast';
+import { AttendanceButton } from '@/components/AttendanceButton';
 
 type Score = { id: number; username: string; score: number; comment: string | null; createdAt: number | null };
 
@@ -43,11 +45,13 @@ export default function DetalleClient({
   scores: initialScores,
   username,
   initialAttendance,
+  isAttending,
 }: {
   screening: ScreeningRow;
   scores: Score[];
   username: string | null;
   initialAttendance: { username: string }[];
+  isAttending?: boolean;
 }) {
   const [scores, setScores] = useState(initialScores);
   const [filterStar, setFilterStar] = useState<number | null>(null);
@@ -56,6 +60,7 @@ export default function DetalleClient({
   const [myRating, setMyRating] = useState(initialMyScore?.score ?? 0);
   const [myComment, setMyComment] = useState(initialMyScore?.comment ?? '');
   const [publishing, setPublishing] = useState(false);
+  const [savedScore, setSavedScore] = useState(false);
   const [attendance, setAttendance] = useState(initialAttendance);
   const [justConfirmed, setJustConfirmed] = useState(false);
   const isGoing = username ? attendance.some((a) => a.username === username) : false;
@@ -104,6 +109,8 @@ export default function DetalleClient({
       });
       setMyRating(updated.score);
       setMyComment(updated.comment ?? '');
+      setSavedScore(true);
+      setTimeout(() => setSavedScore(false), 2500);
     }
     setPublishing(false);
   };
@@ -423,9 +430,15 @@ export default function DetalleClient({
             La película para esta función todavía se está votando. ¡Sumate a elegir!
           </p>
           <Link href="/votacion" className="btn btn-primary">Ver candidatas y votar →</Link>
+          {username && (
+            <div style={{ marginTop: 20 }}>
+              <AttendanceButton screeningId={screening.id} initialAttending={isAttending ?? false} />
+            </div>
+          )}
         </div>
       )}
 
+      <Toast message="✓ Puntaje guardado" visible={savedScore} />
       <style>{`
         @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         @media (max-width: 900px) {

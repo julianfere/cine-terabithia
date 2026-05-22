@@ -65,5 +65,6 @@ export default async function DetallePage({ params }: Props) {
   if (!screening) notFound();
 
   const username = session?.user?.name ?? null;
-  return <DetalleClient screening={screening} scores={scores} username={username} initialAttendance={attendance} />;
+  const isAttending = username ? attendance.some((a) => a.username === username) : false;
+  return <DetalleClient screening={screening} scores={scores} username={username} initialAttendance={attendance} isAttending={isAttending} />;
 }
