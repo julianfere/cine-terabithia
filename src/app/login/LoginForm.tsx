@@ -16,6 +16,12 @@ export default function LoginForm() {
     setError('');
     setLoading(true);
 
+    if (!username.trim() || !password) {
+      setError('Completá usuario y contraseña.');
+      setLoading(false);
+      return;
+    }
+
     if (mode === 'register') {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -101,7 +107,6 @@ export default function LoginForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Tu apodo"
-              required
               autoFocus
               style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' }}
             />
@@ -114,7 +119,6 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              required
               style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 14, color: 'var(--ink)', outline: 'none' }}
             />
           </div>
