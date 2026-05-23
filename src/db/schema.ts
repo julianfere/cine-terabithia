@@ -56,6 +56,7 @@ export const recommendations = pgTable('recommendations', {
   suggestedById: integer('suggested_by_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   reason: text('reason'),
   featured: boolean('featured').default(false),
+  status: text('status').notNull().default('active'), // 'active' | 'assigned'
   createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 });
 

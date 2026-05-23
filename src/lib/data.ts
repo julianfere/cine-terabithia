@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { movies, screenings, scores, recommendations, recommendationVotes, attendances, users } from '@/db/schema';
-import { eq, desc, avg, count, asc, and, inArray } from 'drizzle-orm';
+import { eq, desc, avg, count, asc, and, inArray, or, isNotNull } from 'drizzle-orm';
 import type { ProfilesMap } from './profiles';
 
 export type ScreeningRow = {
@@ -40,6 +40,8 @@ export type RecommendationRow = {
   suggestedBy: string;
   reason: string | null;
   featured: boolean | null;
+  status: string;
+  programada: boolean;
   votes: number;
   voters: string[];
 };
@@ -160,7 +162,7 @@ export async function getUserRecommendationVotes(userId: number): Promise<number
   return rows.map((r) => r.id).filter((id): id is number => id !== null);
 }
 
-export async function getRecommendations(): Promise<RecommendationRow[]> {
+async function fetchRecommendationRows(statusFilter: string) {
   const db = getDb();
 
   const rows = await db
@@ -170,6 +172,7 @@ export async function getRecommendations(): Promise<RecommendationRow[]> {
       suggestedById: recommendations.suggestedById,
       reason: recommendations.reason,
       featured: recommendations.featured,
+      status: recommendations.status,
       createdAt: recommendations.createdAt,
       title: movies.title,
       year: movies.year,
@@ -181,7 +184,8 @@ export async function getRecommendations(): Promise<RecommendationRow[]> {
       tmdbId: movies.tmdbId,
     })
     .from(recommendations)
-    .leftJoin(movies, eq(recommendations.movieId, movies.id));
+    .leftJoin(movies, eq(recommendations.movieId, movies.id))
+    .where(eq(recommendations.status, statusFilter));
 
   const userRows = await db.select({ id: users.id, username: users.username }).from(users);
   const userMap = new Map(userRows.map((u) => [u.id, u.username]));
@@ -206,9 +210,87 @@ export async function getRecommendations(): Promise<RecommendationRow[]> {
       suggestedBy: userMap.get(r.suggestedById) ?? '',
       voters: votersMap.get(r.id) ?? [],
       votes: (votersMap.get(r.id) ?? []).length,
+      status: r.status ?? 'active',
+      programada: false,
     }))
     .sort((a, b) => b.votes - a.votes);
 }
+
+export async function getRecommendations(): Promise<RecommendationRow[]> {
+  return fetchRecommendationRows('active');
+}
+
+export async function getAssignedRecommendations(): Promise<RecommendationRow[]> {
+  return fetchRecommendationRows('assigned');
+}
+
+export async function getPublicRecommendations(): Promise<RecommendationRow[]> {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      id: recommendations.id,
+      movieId: recommendations.movieId,
+      suggestedById: recommendations.suggestedById,
+      reason: recommendations.reason,
+      featured: recommendations.featured,
+      status: recommendations.status,
+      createdAt: recommendations.createdAt,
+      title: movies.title,
+      year: movies.year,
+      director: movies.director,
+      genre: movies.genre,
+      duration: movies.duration,
+      posterHue: movies.posterHue,
+      posterPath: movies.posterPath,
+      tmdbId: movies.tmdbId,
+      upcomingScreeningId: screenings.id,
+    })
+    .from(recommendations)
+    .leftJoin(movies, eq(recommendations.movieId, movies.id))
+    .leftJoin(
+      screenings,
+      and(eq(screenings.movieId, recommendations.movieId), eq(screenings.status, 'upcoming')),
+    )
+    .where(
+      or(
+        eq(recommendations.status, 'active'),
+        and(eq(recommendations.status, 'assigned'), isNotNull(screenings.id)),
+      ),
+    );
+
+  const userRows = await db.select({ id: users.id, username: users.username }).from(users);
+  const userMap = new Map(userRows.map((u) => [u.id, u.username]));
+
+  const voteRows = await db
+    .select({ recId: recommendationVotes.recommendationId, username: users.username })
+    .from(recommendationVotes)
+    .innerJoin(users, eq(recommendationVotes.userId, users.id));
+
+  const votersMap = new Map<number, string[]>();
+  for (const v of voteRows) {
+    if (!v.recId) continue;
+    const arr = votersMap.get(v.recId) ?? [];
+    arr.push(v.username);
+    votersMap.set(v.recId, arr);
+  }
+
+  return rows
+    .map((r) => ({
+      ...r,
+      title: r.title ?? '',
+      suggestedBy: userMap.get(r.suggestedById) ?? '',
+      voters: votersMap.get(r.id) ?? [],
+      votes: (votersMap.get(r.id) ?? []).length,
+      status: r.status ?? 'active',
+      programada: r.status === 'assigned',
+    }))
+    .sort((a, b) => {
+      if (a.programada !== b.programada) return a.programada ? -1 : 1;
+      return b.votes - a.votes;
+    });
+}
+
 
 export type AttendedScreeningRow = ScreeningRow & { userScore: number | null; userComment: string | null };
 

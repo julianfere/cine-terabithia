@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { getAllScreenings, getRecommendations } from '@/lib/data';
+import { getAllScreenings, getRecommendations, getAssignedRecommendations } from '@/lib/data';
 import { getDb } from '@/db';
 import { users, pushSubscriptions, notificationLogs } from '@/db/schema';
 import { desc } from 'drizzle-orm';
@@ -12,9 +12,10 @@ export default async function AdminPage() {
   if (!session || session.user?.role !== 'admin') redirect('/login');
 
   const db = getDb();
-  const [screenings, recs, allUsers, subs, logs] = await Promise.all([
+  const [screenings, recs, assignedRecs, allUsers, subs, logs] = await Promise.all([
     getAllScreenings(),
     getRecommendations(),
+    getAssignedRecommendations(),
     db.select({
       id: users.id,
       username: users.username,
@@ -29,6 +30,7 @@ export default async function AdminPage() {
     <AdminClient
       screenings={screenings}
       recs={recs}
+      assignedRecs={assignedRecs}
       initialUsers={allUsers}
       subscribedUserIds={[...new Set(subs.map((s) => s.userId))]}
       initialLogs={logs}

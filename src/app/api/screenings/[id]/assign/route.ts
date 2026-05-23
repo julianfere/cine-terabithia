@@ -15,8 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const [rec] = await db.select().from(recommendations).where(eq(recommendations.id, Number(recommendationId))).limit(1);
   if (!rec) return NextResponse.json({ error: 'Recommendation not found' }, { status: 404 });
 
-  // La recommendation ya tiene movie_id — simplemente lo asignamos al screening
   await db.update(screenings).set({ movieId: rec.movieId }).where(eq(screenings.id, Number(id)));
+  await db.update(recommendations).set({ status: 'assigned' }).where(eq(recommendations.id, Number(recommendationId)));
 
   const [updated] = await db
     .select({

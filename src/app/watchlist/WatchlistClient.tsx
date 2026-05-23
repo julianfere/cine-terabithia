@@ -28,7 +28,10 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
     const list = filter === 'mine' && username
       ? recs.filter((r) => r.suggestedBy === username)
       : [...recs];
-    return list.sort((a, b) => b.votes - a.votes);
+    return list.sort((a, b) => {
+      if (a.programada !== b.programada) return a.programada ? -1 : 1;
+      return b.votes - a.votes;
+    });
   }, [recs, filter, username]);
 
   const filtered = useMemo(() => {
@@ -122,7 +125,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   return (
     <div className="page-enter shell" style={{ paddingTop: 32 }}>
       <SectionHeader
-        eyebrow={`${recs.length} películas en la cola`}
+        eyebrow={`${recs.filter(r => !r.programada).length} películas en la cola`}
         title={<>Sugeridos <em>por el club</em></>}
         action={username ? <button className="btn btn-primary" onClick={() => setShowAdd(true)}>+ Recomendar</button> : undefined}
       />
@@ -213,6 +216,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
           <div
             key={r.id}
             className="wl-row"
+            style={{ opacity: r.programada ? 0.55 : 1 }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elev)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '')}
           >
@@ -253,8 +257,9 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                   {r.reason?.trim() && (
                     <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)' }}>&quot;{r.reason}&quot;</div>
                   )}
-                  {r.featured ? <Badge kind="accent">Destacada</Badge> : null}
-                  {r.suggestedBy === username && (
+                  {r.programada && <Badge kind="accent">Ya programada</Badge>}
+                  {!r.programada && r.featured ? <Badge kind="accent">Destacada</Badge> : null}
+                  {!r.programada && r.suggestedBy === username && (
                     <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                       <button
                         className="btn btn-ghost btn-sm"
@@ -280,23 +285,35 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
               <Avatar {...resolveUser(profiles, r.suggestedBy)} size="sm" />
             </div>
             <div className="wl-vote">
-              <button
-                onClick={() => handleVote(r.id)}
-                disabled={!username}
-                style={{
-                  background: votedIds.has(r.id) ? 'var(--accent)' : 'transparent',
-                  color: votedIds.has(r.id) ? 'var(--bg)' : 'var(--ink)',
-                  border: `1px solid ${votedIds.has(r.id) ? 'var(--accent)' : 'var(--line)'}`,
+              {r.programada ? (
+                <span style={{
                   padding: '8px 14px', borderRadius: 'var(--radius-sm)',
                   fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
-                  cursor: username ? 'pointer' : 'default',
-                  opacity: username ? 1 : 0.4,
                   display: 'flex', alignItems: 'center', gap: 6,
                   minWidth: 70, justifyContent: 'center',
-                }}
-              >
-                ↑ {r.votes}
-              </button>
+                  color: 'var(--ink-mute)', border: '1px solid var(--line)',
+                }}>
+                  ↑ {r.votes}
+                </span>
+              ) : (
+                <button
+                  onClick={() => handleVote(r.id)}
+                  disabled={!username}
+                  style={{
+                    background: votedIds.has(r.id) ? 'var(--accent)' : 'transparent',
+                    color: votedIds.has(r.id) ? 'var(--bg)' : 'var(--ink)',
+                    border: `1px solid ${votedIds.has(r.id) ? 'var(--accent)' : 'var(--line)'}`,
+                    padding: '8px 14px', borderRadius: 'var(--radius-sm)',
+                    fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
+                    cursor: username ? 'pointer' : 'default',
+                    opacity: username ? 1 : 0.4,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    minWidth: 70, justifyContent: 'center',
+                  }}
+                >
+                  ↑ {r.votes}
+                </button>
+              )}
               {r.voters.length > 0 && (
                 <AvatarStack names={r.voters} max={4} size="sm" profiles={profiles} />
               )}

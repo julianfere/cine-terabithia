@@ -19,10 +19,11 @@ type UserRow = { id: number; username: string; role: string; createdAt: number |
 type LogRow = { id: number; title: string; body: string; url: string; recipientType: string; recipientUserIds: string | null; sent: number; failed: number; sentAt: number | null };
 
 export default function AdminClient({
-  screenings, recs, initialUsers, subscribedUserIds, initialLogs,
+  screenings, recs, assignedRecs, initialUsers, subscribedUserIds, initialLogs,
 }: {
   screenings: ScreeningRow[];
   recs: RecommendationRow[];
+  assignedRecs: RecommendationRow[];
   initialUsers: UserRow[];
   subscribedUserIds: number[];
   initialLogs: LogRow[];
@@ -35,6 +36,7 @@ export default function AdminClient({
   const [sendResult, setSendResult] = useState<{ sent: number; failed: number } | null>(null);
   const [list, setList] = useState(screenings);
   const [recList, setRecList] = useState(recs);
+  const [assignedRecList, setAssignedRecList] = useState(assignedRecs);
   const [userList, setUserList] = useState(initialUsers);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
@@ -96,7 +98,26 @@ export default function AdminClient({
     if (res.ok) {
       const updated = await res.json();
       setList((prev) => prev.map((s) => s.id === screeningId ? { ...s, ...updated } : s));
+      const moved = recList.find((r) => r.id === recId);
+      if (moved) {
+        setRecList((prev) => prev.filter((r) => r.id !== recId));
+        setAssignedRecList((prev) => [{ ...moved, status: 'assigned' }, ...prev]);
+      }
       setAssigningId(null);
+    }
+  };
+
+  const handleReactivateRec = async (id: number) => {
+    const res = await fetch(`/api/recommendations/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'active' }),
+    });
+    if (res.ok) {
+      const rec = assignedRecList.find((r) => r.id === id);
+      if (rec) {
+        setAssignedRecList((prev) => prev.filter((r) => r.id !== id));
+        setRecList((prev) => [...prev, { ...rec, status: 'active' }]);
+      }
     }
   };
 
@@ -197,6 +218,12 @@ export default function AdminClient({
     if (res.ok) {
       const created = await res.json();
       setList((prev) => [created, ...prev]);
+      await fetch(`/api/recommendations/${quickRec.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'assigned' }),
+      });
+      setRecList((prev) => prev.filter((r) => r.id !== quickRec.id));
+      setAssignedRecList((prev) => [{ ...quickRec, status: 'assigned' }, ...prev]);
       setQuickRec(null);
     }
   };
@@ -406,7 +433,7 @@ export default function AdminClient({
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'contents' }}>
           {([
             { key: 'funciones' as const, label: 'Funciones', count: list.length },
-            { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length },
+            { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length + assignedRecList.length },
             { key: 'usuarios' as const, label: 'Usuarios', count: userList.length },
             { key: 'notificaciones' as const, label: 'Notificaciones', count: subscribedUserIds.length },
           ]).map((item) => (
@@ -658,7 +685,7 @@ export default function AdminClient({
           <section>
             {pageHead('Admin / Sugeridos', 'Sugeridos por el club')}
 
-            {recList.length === 0 && (
+            {recList.length === 0 && assignedRecList.length === 0 && (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Sin sugerencias todavía.</div>
             )}
 
@@ -722,6 +749,55 @@ export default function AdminClient({
                 </div>
               ))}
             </div>
+
+            {assignedRecList.length > 0 && (
+              <div style={{ marginTop: 40 }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.18em', textTransform: 'uppercase', margin: '0 0 16px' }}>
+                  Ya programadas ({assignedRecList.length})
+                </p>
+                <div className="admin-recs-grid">
+                  {assignedRecList.map((r) => (
+                    <div key={r.id} style={{
+                      background: 'var(--bg-elev)', border: '1px solid var(--line)',
+                      borderRadius: 10, padding: 16, opacity: 0.6,
+                      display: 'grid', gridTemplateColumns: '64px 1fr', gap: 14,
+                    }}>
+                      <div style={{
+                        width: 64, height: 90, borderRadius: 4,
+                        ...(r.posterPath
+                          ? { backgroundImage: `url(https://image.tmdb.org/t/p/w92${r.posterPath})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                          : { background: `linear-gradient(135deg, oklch(0.32 0.10 ${r.posterHue ?? 210}), oklch(0.18 0.06 ${r.posterHue ?? 210}))` }),
+                      }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>
+                          {r.title}{r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 4 }}>&apos;{r.year.toString().slice(-2)}</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '0.04em', marginBottom: 12 }}>
+                          <Avatar name={r.suggestedBy} size="sm" />
+                          <span>{r.suggestedBy}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => handleReactivateRec(r.id)}
+                            style={{ height: 30, padding: '0 12px', background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, color: 'var(--ink-soft)', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}
+                          >
+                            Reactivar
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRec(r.id)}
+                            style={{ width: 30, height: 30, background: 'transparent', border: '1px solid transparent', borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-mute)' }}
+                            onMouseEnter={(e) => Object.assign((e.currentTarget as HTMLButtonElement).style, { color: 'var(--hot)', borderColor: 'var(--hot)' })}
+                            onMouseLeave={(e) => Object.assign((e.currentTarget as HTMLButtonElement).style, { color: 'var(--ink-mute)', borderColor: 'transparent' })}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
 

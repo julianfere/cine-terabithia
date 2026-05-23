@@ -40,10 +40,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json();
   const { title, year, director, genre, duration, posterPath, posterHue, tmdbId, synopsis, ...recFields } = body;
 
-  // Campos de la recommendation (reason, featured)
+  // Campos de la recommendation (reason, featured, status)
   const recUpdate: Record<string, unknown> = {};
   if ('reason' in recFields) recUpdate.reason = recFields.reason;
   if ('featured' in recFields) recUpdate.featured = recFields.featured;
+  if ('status' in recFields && (recFields.status === 'active' || recFields.status === 'assigned')) {
+    recUpdate.status = recFields.status;
+  }
 
   if (Object.keys(recUpdate).length > 0) {
     await db.update(recommendations).set(recUpdate).where(eq(recommendations.id, numId));
