@@ -1,8 +1,12 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import TopBar from '@/components/TopBar';
 import { Providers } from '@/components/Providers';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import WhatsNewGate from '@/components/WhatsNewGate';
+import AccentProvider from '@/components/AccentProvider';
+import { ACCENT_INIT_SCRIPT } from '@/lib/themes';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://cine-terabithia.vercel.app'),
@@ -32,13 +36,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <Script id="accent-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
+      </head>
       <body>
         <Providers>
+          <AccentProvider />
           <div className="app">
             <TopBar />
             {children}
           </div>
+          <WhatsNewGate />
         </Providers>
         <ServiceWorkerRegister />
       </body>

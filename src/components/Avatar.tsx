@@ -1,5 +1,6 @@
 'use client';
 import { AVATARS } from '@/lib/avatars';
+import { GRADIENTS, FONTS, ICONS, GradShape, parseGradAvatar } from '@/lib/gradientAvatars';
 import type { ProfilesMap } from '@/lib/profiles';
 import { resolveUser } from '@/lib/profiles';
 
@@ -32,6 +33,59 @@ interface AvatarProps {
 export function Avatar({ name, color, size = 'md', title, avatarId }: AvatarProps) {
   const cls = size === 'sm' ? 'avatar sm' : size === 'lg' ? 'avatar lg' : size === 'xl' ? 'avatar xl' : 'avatar';
   const tooltip = title || name;
+
+  if (avatarId?.startsWith('grad:')) {
+    const parsed = parseGradAvatar(avatarId);
+    const gradient = parsed ? GRADIENTS.find((g) => g.id === parsed.gradientId) : null;
+    if (gradient && parsed) {
+      const gid = `ga_${gradient.id.replace(/-/g, '_')}`;
+      const contentStr = parsed.contentStr;
+      const isIcon = contentStr.startsWith('icon-');
+      const gradientDefs = (
+        <defs>
+          <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={gradient.from} />
+            <stop offset="100%" stopColor={gradient.to} />
+          </linearGradient>
+        </defs>
+      );
+
+      if (isIcon) {
+        const iconId = contentStr.slice(5);
+        const iconDef = ICONS.find((i) => i.id === iconId);
+        return (
+          <span className={cls} style={{ overflow: 'hidden', padding: 0, lineHeight: 0 }} title={tooltip}>
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', display: 'block' }} aria-hidden>
+              {gradientDefs}
+              <rect width="40" height="40" fill={`url(#${gid})`} />
+              <GradShape shapeId={parsed.shapeId} />
+              {iconDef && iconDef.Render()}
+            </svg>
+          </span>
+        );
+      }
+
+      const fontId = contentStr.split('-')[1] ?? 'sans';
+      const fontDef = FONTS.find((f) => f.id === fontId) ?? FONTS[0];
+      return (
+        <span className={cls} style={{ overflow: 'hidden', position: 'relative' }} title={tooltip}>
+          <svg
+            viewBox="0 0 40 40"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+            aria-hidden
+          >
+            {gradientDefs}
+            <rect width="40" height="40" fill={`url(#${gid})`} />
+            <GradShape shapeId={parsed.shapeId} />
+          </svg>
+          <span style={{ position: 'relative', zIndex: 1, color: 'rgba(255,255,255,0.92)', fontFamily: fontDef.family, fontWeight: fontDef.weight, fontStyle: fontDef.style ?? 'normal' }}>
+            {initials(name)}
+          </span>
+        </span>
+      );
+    }
+  }
 
   if (avatarId) {
     const def = AVATARS.find((a) => a.id === avatarId);

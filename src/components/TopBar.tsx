@@ -88,7 +88,15 @@ export default function TopBar() {
 
   useEffect(() => {
     if (!username) { setProfile(null); setStats(null); return; }
-    fetch('/api/users/me').then((r) => r.ok ? r.json() : null).then((data) => setProfile(data ?? null));
+    const fetchProfile = () =>
+      fetch('/api/users/me').then((r) => r.ok ? r.json() : null).then((data) => setProfile(data ?? null));
+    fetchProfile();
+    window.addEventListener('profile-updated', fetchProfile);
+    return () => window.removeEventListener('profile-updated', fetchProfile);
+  }, [username]);
+
+  useEffect(() => {
+    if (!username) { setStats(null); return; }
     fetch('/api/users/me/stats').then((r) => r.ok ? r.json() : null).then((data) => setStats(data ?? null));
   }, [username]);
 
@@ -109,12 +117,12 @@ export default function TopBar() {
     <header className="topbar">
       <div className="topbar-inner">
         <Link href="/" className="logo">
-          <svg viewBox="0 0 100 100" style={{ width: 36, height: 36, flexShrink: 0 }}>
-            <rect width="100" height="100" rx="20" fill="#E46217"/>
+          <svg viewBox="0 0 100 100" style={{ width: 36, height: 36, flexShrink: 0, color: 'var(--accent)' }}>
+            <rect width="100" height="100" rx="20" fill="currentColor"/>
             <path d="M 16 32 H 84 V 48 a6 6 0 0 0 0 12 V 76 H 16 V 60 a6 6 0 0 0 0 -12 Z" fill="#14181C"/>
-            <line x1="56" y1="36" x2="56" y2="72" stroke="#E46217" strokeWidth="1.5" strokeDasharray="2.5 2.5"/>
-            <text x="36" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="11" fill="#E46217" letterSpacing="1">CT</text>
-            <text x="71" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="9" fill="#E46217">048</text>
+            <line x1="56" y1="36" x2="56" y2="72" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2.5 2.5"/>
+            <text x="36" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="11" fill="currentColor" letterSpacing="1">CT</text>
+            <text x="71" y="59" textAnchor="middle" fontFamily="DM Mono" fontWeight="500" fontSize="9" fill="currentColor">048</text>
           </svg>
           <div className="logo-text">
             Cine Terabithia

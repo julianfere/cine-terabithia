@@ -7,6 +7,7 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('user'),
   displayName: text('display_name'),
   avatar: text('avatar'),
+  lastSeenChangelog: bigint('last_seen_changelog', { mode: 'number' }),
   createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 });
 
