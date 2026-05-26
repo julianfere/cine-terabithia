@@ -16,13 +16,14 @@ function useWhatsNew(features: Feature[]) {
     setLastSeen(stored);
 
     if (!stored) {
-      // Primera visita: guardar timestamp sin mostrar el modal.
-      try { localStorage.setItem(WHATS_NEW_LS_KEY, new Date().toISOString()); } catch {}
+      // Primera visita: mostrar todas las novedades. El timestamp se guarda al cerrar.
+      setNewOnes(features);
+      setOpen(true);
       return;
     }
 
     const since = stored.slice(0, 10); // yyyy-mm-dd
-    const news = features.filter((f) => f.date > since);
+    const news = features.filter((f) => f.date >= since);
     if (news.length > 0) {
       setNewOnes(news);
       setOpen(true);

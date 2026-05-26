@@ -307,6 +307,9 @@ export default async function Home() {
           .recent-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .hero-grid .h-display { font-size: clamp(40px, 10vw, 64px) !important; }
         }
+        @media (max-width: 480px) {
+          .recent-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px !important; }
+        }
       `}</style>
     </div>
   );

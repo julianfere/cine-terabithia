@@ -294,6 +294,28 @@ export async function getPublicRecommendations(): Promise<RecommendationRow[]> {
 
 export type AttendedScreeningRow = ScreeningRow & { userScore: number | null; userComment: string | null };
 
+export type AttendanceRow = {
+  userId: number;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+};
+
+export async function getAttendancesForScreening(screeningId: number): Promise<AttendanceRow[]> {
+  const db = getDb();
+  return db
+    .select({
+      userId: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      avatar: users.avatar,
+    })
+    .from(attendances)
+    .innerJoin(users, eq(attendances.userId, users.id))
+    .where(eq(attendances.screeningId, screeningId))
+    .orderBy(asc(users.username));
+}
+
 export async function getAttendedScreeningsForUser(userId: number): Promise<AttendedScreeningRow[]> {
   const db = getDb();
 

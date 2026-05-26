@@ -11,6 +11,18 @@ function urlBase64ToUint8Array(base64: string) {
 export function PushNotificationsToggle() {
   const [state, setState] = useState<'unsupported' | 'loading' | 'subscribed' | 'unsubscribed'>('loading');
   const [busy, setBusy] = useState(false);
+  const [testState, setTestState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+
+  async function testNotification() {
+    setTestState('loading');
+    try {
+      const res = await fetch('/api/push/test-me', { method: 'POST' });
+      setTestState(res.ok ? 'ok' : 'error');
+    } catch {
+      setTestState('error');
+    }
+    setTimeout(() => setTestState('idle'), 3000);
+  }
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -64,14 +76,27 @@ export function PushNotificationsToggle() {
       <div className="eyebrow" style={{ marginBottom: 10 }}>Notificaciones</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         {state === 'subscribed' ? (
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={toggle}
-            disabled={busy}
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}
-          >
-            {busy ? 'Desactivando…' : '🔔 Notificaciones activas — desactivar'}
-          </button>
+          <>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={toggle}
+              disabled={busy}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}
+            >
+              {busy ? 'Desactivando…' : '🔔 Notificaciones activas — desactivar'}
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={testNotification}
+              disabled={testState === 'loading'}
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}
+            >
+              {testState === 'loading' && 'Enviando...'}
+              {testState === 'ok' && '¡Enviada!'}
+              {testState === 'error' && 'Error'}
+              {testState === 'idle' && 'Probar'}
+            </button>
+          </>
         ) : (
           <button
             className="btn btn-primary btn-sm"

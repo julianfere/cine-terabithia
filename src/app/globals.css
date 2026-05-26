@@ -621,6 +621,8 @@ textarea::placeholder {
 
 /* ─── TICKET CARD ─── */
 .ticket-card {
+  --accent: #E46217;
+  --accent-2: #DA5D37;
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -1100,6 +1102,45 @@ textarea::placeholder {
   .admin-user-form {
     grid-template-columns: 1fr;
   }
+}
+
+/* ─── ENTRADAS TAB ─── */
+.entradas-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .entradas-grid {
+    grid-template-columns: 1fr;
+  }
+  .entradas-list-col.has-selection {
+    display: none;
+  }
+  .entradas-detail-col.no-selection {
+    display: none;
+  }
+  .entradas-back-btn {
+    display: flex !important;
+  }
+}
+
+.entradas-back-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 12px;
 }
 
 /* ─── TOP-REC CARD ─── */
@@ -1671,4 +1712,33 @@ nav::-webkit-scrollbar {
   .wn-title { font-size: 24px; }
   .wn-item-title { font-size: 15px; }
   .wn-date { margin-left: 0; width: 100%; }
+}
+
+/* ─── PRINT: Entradas admin ─── */
+@media print {
+  html, body { visibility: hidden; height: auto; overflow: visible; }
+  #print-tickets {
+    display: block !important;
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #print-tickets * { visibility: visible; }
+  .ticket-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  .ticket-main,
+  .ticket-side,
+  .ticket-bar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

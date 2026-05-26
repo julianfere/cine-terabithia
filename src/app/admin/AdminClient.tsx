@@ -2,10 +2,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { signOut } from 'next-auth/react';
-import type { ScreeningRow, RecommendationRow } from '@/lib/data';
+import type { ScreeningRow, RecommendationRow, AttendanceRow } from '@/lib/data';
 import { Avatar } from '@/components/Avatar';
 import MovieSearch, { type MovieDetails } from '@/components/MovieSearch';
 import { DatePicker } from '@/components/DatePicker';
+import { Ticket } from '@/components/Ticket';
 
 function fmtDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -28,7 +29,11 @@ export default function AdminClient({
   subscribedUserIds: number[];
   initialLogs: LogRow[];
 }) {
-  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones'>('funciones');
+  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones' | 'entradas'>('funciones');
+  const [entrScreeningId, setEntrScreeningId] = useState<number | null>(null);
+  const [entrAttendees, setEntrAttendees] = useState<AttendanceRow[]>([]);
+  const [entrSearch, setEntrSearch] = useState('');
+  const [entrLoading, setEntrLoading] = useState(false);
   const subscribedSet = new Set(subscribedUserIds);
   const [logs, setLogs] = useState<LogRow[]>(initialLogs);
   const [compose, setCompose] = useState({ title: '', body: '', url: '/', recipients: 'all' as 'all' | number[] });
@@ -333,6 +338,35 @@ export default function AdminClient({
     setSending(false);
   };
 
+  const handleOpenEntradas = async (screeningId: number) => {
+    if (entrScreeningId === screeningId) { setEntrScreeningId(null); return; }
+    setEntrScreeningId(screeningId);
+    setEntrSearch('');
+    setEntrLoading(true);
+    const res = await fetch(`/api/admin/screenings/${screeningId}/attendances`);
+    if (res.ok) setEntrAttendees(await res.json());
+    setEntrLoading(false);
+  };
+
+  const handleAssignTicket = async (screeningId: number, userId: number) => {
+    const res = await fetch(`/api/admin/screenings/${screeningId}/attendances`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    });
+    if (res.ok) {
+      const user = userList.find((u) => u.id === userId);
+      if (user) setEntrAttendees((prev) => [...prev, { userId: user.id, username: user.username, displayName: null, avatar: null }]);
+    }
+    setEntrSearch('');
+  };
+
+  const handleRemoveTicket = async (screeningId: number, userId: number) => {
+    await fetch(`/api/admin/screenings/${screeningId}/attendances/${userId}`, { method: 'DELETE' });
+    setEntrAttendees((prev) => prev.filter((a) => a.userId !== userId));
+  };
+
+  const handlePrint = () => window.print();
+
   // ── computed ───────────────────────────────────────────────────────────────
 
   const pastList = list.filter((s) => s.status === 'past');
@@ -433,6 +467,7 @@ export default function AdminClient({
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'contents' }}>
           {([
             { key: 'funciones' as const, label: 'Funciones', count: list.length },
+            { key: 'entradas' as const, label: 'Entradas', count: list.length },
             { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length + assignedRecList.length },
             { key: 'usuarios' as const, label: 'Usuarios', count: userList.length },
             { key: 'notificaciones' as const, label: 'Notificaciones', count: subscribedUserIds.length },
@@ -1008,6 +1043,138 @@ export default function AdminClient({
           </section>
         )}
 
+        {/* ── ENTRADAS ── */}
+        {tab === 'entradas' && (() => {
+          const selectedScreening = list.find((s) => s.id === entrScreeningId) ?? null;
+          const attendeeIds = new Set(entrAttendees.map((a) => a.userId));
+          const searchLower = entrSearch.toLowerCase();
+          const searchResults = entrSearch.length > 0
+            ? userList.filter((u) => !attendeeIds.has(u.id) && u.username.toLowerCase().includes(searchLower))
+            : [];
+
+          return (
+            <section>
+              {pageHead('Admin / Entradas', 'Entradas',
+                selectedScreening && entrAttendees.length > 0
+                  ? <button onClick={handlePrint} style={btnPrimary}>Imprimir tickets ({entrAttendees.length})</button>
+                  : undefined,
+              )}
+
+              <div className="entradas-grid">
+
+                {/* ── Lista de funciones ── */}
+                <div className={`entradas-list-col${selectedScreening ? ' has-selection' : ''}`} style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase' as const, letterSpacing: '0.14em', color: 'var(--ink-mute)', background: '#0F1216' }}>
+                    Funciones ({list.length})
+                  </div>
+                  {list.map((s) => {
+                    const isSelected = entrScreeningId === s.id;
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => handleOpenEntradas(s.id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--line)', background: isSelected ? 'rgba(228, 98, 23, 0.10)' : 'transparent', borderLeft: `3px solid ${isSelected ? 'var(--accent)' : 'transparent'}`, transition: 'background 0.1s' }}
+                        onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}
+                        onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                      >
+                        <div style={{ ...posterStyle(s), width: 28, height: 40, flexShrink: 0 }} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? 'var(--ink)' : 'var(--ink-soft)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {s.title ?? 'Sin película'}
+                          </div>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isSelected ? 'var(--accent)' : 'var(--ink-mute)', marginTop: 2 }}>
+                            {fmtDate(s.scheduledDate)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ── Panel de gestión ── */}
+                {!selectedScreening ? (
+                  <div className="entradas-detail-col no-selection" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+                    Seleccioná una función para gestionar sus entradas
+                  </div>
+                ) : (
+                  <div className="entradas-detail-col">
+                    <button className="entradas-back-btn" onClick={() => setEntrScreeningId(null)}>
+                      ← Volver
+                    </button>
+                    <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10 }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: '1px solid var(--line)', background: '#0F1216', borderRadius: '10px 10px 0 0' }}>
+                      <div style={{ ...posterStyle(selectedScreening), width: 32, height: 46, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 15 }}>{selectedScreening.title ?? 'Sin película'}</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', marginTop: 2 }}>
+                          {fmtDate(selectedScreening.scheduledDate)}{selectedScreening.location ? ` · ${selectedScreening.location}` : ''}
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, padding: '3px 10px', borderRadius: 999, background: 'rgba(228,98,23,0.15)', color: 'var(--accent)' }}>
+                        {entrAttendees.length} asistentes
+                      </span>
+                    </div>
+
+                    {/* Attendees */}
+                    <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {entrLoading ? (
+                        <div style={{ color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 12, padding: '16px 0', textAlign: 'center' as const }}>Cargando...</div>
+                      ) : entrAttendees.length === 0 ? (
+                        <div style={{ color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', fontSize: 12, padding: '16px 0', textAlign: 'center' as const }}>Sin asistentes registrados para esta función.</div>
+                      ) : (
+                        entrAttendees.map((a) => (
+                          <div key={a.userId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: 'var(--bg-card)', borderRadius: 8 }}>
+                            <Avatar name={a.displayName ?? a.username} size="sm" />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600 }}>{a.displayName ?? a.username}</div>
+                              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)' }}>@{a.username}</div>
+                            </div>
+                            <button
+                              onClick={() => handleRemoveTicket(selectedScreening.id, a.userId)}
+                              style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--hot)', cursor: 'pointer' }}
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Search */}
+                    <div style={{ padding: '0 18px 18px', position: 'relative' }}>
+                      <input
+                        type="text"
+                        placeholder="Agregar usuario..."
+                        value={entrSearch}
+                        onChange={(e) => setEntrSearch(e.target.value)}
+                        style={inp}
+                      />
+                      {searchResults.length > 0 && (
+                        <div style={{ position: 'absolute', top: '100%', left: 18, right: 18, zIndex: 50, background: '#1a1d23', border: '1px solid var(--accent)', borderRadius: 8, marginTop: 2, boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                          {searchResults.slice(0, 8).map((u) => (
+                            <button
+                              key={u.id}
+                              onClick={() => handleAssignTicket(selectedScreening.id, u.id)}
+                              style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: 'var(--ink)', textAlign: 'left' as const }}
+                              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(228,98,23,0.10)')}
+                              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'none')}
+                            >
+                              <Avatar name={u.username} size="sm" />
+                              <span style={{ fontSize: 13, color: 'var(--ink)' }}>{u.username}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })()}
+
         {/* ── NUEVA FUNCIÓN ── */}
         {tab === 'nueva' && (
           <section>
@@ -1262,6 +1429,13 @@ export default function AdminClient({
           </div>
         </div>
       )}
+
+      <div id="print-tickets" style={{ display: 'none' }}>
+        {entrScreeningId != null && entrAttendees.map((a) => {
+          const s = list.find((sc) => sc.id === entrScreeningId);
+          return s ? <Ticket key={a.userId} screening={s} username={a.username} /> : null;
+        })}
+      </div>
     </div>
   );
 }
