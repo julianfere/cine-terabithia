@@ -3,14 +3,21 @@ export const WHATS_NEW_LS_KEY  = 'ct.whatsNew.lastSeen';
 
 export type Feature = {
   id:    string;   // clave estable
-  date:  string;   // 'YYYY-MM-DD' — comparado con lastSeen en localStorage
+  date:  string;   // ISO 8601 — 'YYYY-MM-DD' o 'YYYY-MM-DDTHH:mm:ss' — comparado con lastSeen en localStorage
   tag:   string;   // chip de categoría, ej. 'Perfil'
   title: string;
   desc:  string;
 };
 
-// Agregar entradas nuevas al principio. Fechas en ISO yyyy-mm-dd.
+// Agregar entradas nuevas al principio. Fechas en ISO (con hora opcional): 'YYYY-MM-DDTHH:mm:ss'.
 export const WHATS_NEW_FEATURES: Feature[] = [
+  {
+    id:    'watchlist-detail',
+    date:  '2026-05-26T21:00:00',
+    tag:   'Sugeridos',
+    title: 'Detalle por película',
+    desc:  'Tocá cualquier película en Sugeridos para ver quién la recomendó y quiénes votaron, con nombre y avatar de cada uno.',
+  },
   {
     id:    'feedback-form',
     date:  '2026-05-26',

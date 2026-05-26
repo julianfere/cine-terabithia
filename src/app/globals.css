@@ -1212,6 +1212,49 @@ button {
   justify-content: center;
 }
 
+.wl-suggested-by-mobile {
+  display: none;
+}
+
+.wl-row-expanded {
+  background: var(--bg-elev) !important;
+  border-bottom: none !important;
+}
+
+.wl-detail {
+  display: flex;
+  gap: 20px;
+  padding: 16px 20px 20px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+  animation: wlDetailIn 0.18s ease-out;
+}
+
+@keyframes wlDetailIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.wl-detail-poster {
+  flex-shrink: 0;
+  width: 80px;
+}
+
+.wl-detail-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.wl-detail-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.wl-detail-section {
+  min-width: 120px;
+}
+
 .wl-vote {
   display: flex;
   flex-direction: column;
@@ -1237,6 +1280,32 @@ button {
 
   .wl-avatar {
     display: none;
+  }
+
+  .wl-suggested-by-mobile {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 0.04em;
+  }
+
+  .wl-detail {
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 12px 16px;
+  }
+
+  .wl-detail-poster {
+    display: none;
+  }
+
+  .wl-detail-meta {
+    flex-direction: column;
+    gap: 14px;
   }
 
   .wl-vote {
@@ -1705,12 +1774,17 @@ nav::-webkit-scrollbar {
 }
 
 @media (max-width: 600px) {
-  .wn-backdrop { padding: 12px; }
-  .wn-head { padding: 18px 18px 14px 36px; }
-  .wn-body { padding: 4px 18px 4px 36px; }
-  .wn-foot { padding: 14px 18px 16px 36px; flex-direction: column; align-items: stretch; }
-  .wn-title { font-size: 24px; }
-  .wn-item-title { font-size: 15px; }
+  .wn-backdrop { padding: 8px; align-items: flex-end; }
+  .wn-modal { max-height: 82svh; border-radius: 16px 16px 12px 12px; }
+  .wn-modal::before { width: 14px; }
+  .wn-head { padding: 14px 14px 12px 30px; gap: 10px; }
+  .wn-body { padding: 2px 14px 2px 30px; }
+  .wn-foot { padding: 12px 14px 14px 30px; flex-direction: column; align-items: stretch; }
+  .wn-title { font-size: 20px; }
+  .wn-item { padding: 10px 0; gap: 10px; }
+  .wn-item-title { font-size: 14px; margin: 3px 0 2px; }
+  .wn-item-desc { font-size: 12px; }
+  .wn-index { font-size: 18px; min-width: 24px; }
   .wn-date { margin-left: 0; width: 100%; }
 }
 

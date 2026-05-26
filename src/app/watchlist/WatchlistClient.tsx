@@ -23,6 +23,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const [editState, setEditState] = useState<EditState | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = useMemo(() => {
     const list = filter === 'mine' && username
@@ -212,114 +213,181 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       ) : null}
 
       <div>
-        {filtered.map((r, idx) => (
-          <div
-            key={r.id}
-            className="wl-row"
-            style={{ opacity: r.programada ? 0.55 : 1 }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elev)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-          >
-            <div className="h-display" style={{ fontSize: 22, color: idx < 3 ? 'var(--accent)' : 'var(--ink-mute)', fontStyle: 'normal' }}>
-              {String(idx + 1).padStart(2, '0')}
-            </div>
-            <div style={{ width: 60 }}>
-              <Poster label={(r.title ?? '').toUpperCase().slice(0, 10)} hue={r.posterHue ?? 200} posterPath={r.posterPath} />
-            </div>
-            <div>
-              {editState?.id === r.id ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <input
-                    value={editState.title}
-                    onChange={(e) => setEditState((s) => s ? { ...s, title: e.target.value } : s)}
-                    style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid var(--accent)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', padding: '2px 0', outline: 'none' }}
-                  />
-                  <input
-                    value={editState.reason}
-                    onChange={(e) => setEditState((s) => s ? { ...s, reason: e.target.value } : s)}
-                    placeholder="¿Por qué la recomendás?"
-                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--line)', fontSize: 13, color: 'var(--ink-soft)', padding: '2px 0', outline: 'none', fontStyle: 'italic' }}
-                  />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                    <button className="btn btn-primary btn-sm" onClick={handleEditSave} disabled={!editState.title.trim()}>Guardar</button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setEditState(null)}>Cancelar</button>
+        {filtered.map((r, idx) => {
+          const isExpanded = expandedId === r.id;
+          const suggester = resolveUser(profiles, r.suggestedBy);
+          return (
+            <div key={r.id}>
+              <div
+                className={`wl-row${isExpanded ? ' wl-row-expanded' : ''}`}
+                style={{ opacity: r.programada ? 0.55 : 1, cursor: 'pointer' }}
+                onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elev)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = isExpanded ? 'var(--bg-elev)' : '')}
+              >
+                <div className="h-display" style={{ fontSize: 22, color: idx < 3 ? 'var(--accent)' : 'var(--ink-mute)', fontStyle: 'normal' }}>
+                  {String(idx + 1).padStart(2, '0')}
+                </div>
+                <div style={{ width: 60 }}>
+                  <Poster label={(r.title ?? '').toUpperCase().slice(0, 10)} hue={r.posterHue ?? 200} posterPath={r.posterPath} />
+                </div>
+                <div>
+                  {editState?.id === r.id ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        value={editState.title}
+                        onChange={(e) => setEditState((s) => s ? { ...s, title: e.target.value } : s)}
+                        style={{ background: 'transparent', border: 'none', borderBottom: '1.5px solid var(--accent)', fontWeight: 700, fontSize: 17, color: 'var(--ink)', padding: '2px 0', outline: 'none' }}
+                      />
+                      <input
+                        value={editState.reason}
+                        onChange={(e) => setEditState((s) => s ? { ...s, reason: e.target.value } : s)}
+                        placeholder="¿Por qué la recomendás?"
+                        style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--line)', fontSize: 13, color: 'var(--ink-soft)', padding: '2px 0', outline: 'none', fontStyle: 'italic' }}
+                      />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                        <button className="btn btn-primary btn-sm" onClick={handleEditSave} disabled={!editState.title.trim()}>Guardar</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setEditState(null)}>Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontWeight: 700, fontSize: 17, lineHeight: 1.2 }}>
+                        {r.title}
+                        {r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>&apos;{String(r.year).slice(2)}</span>}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3, marginBottom: 4 }}>
+                        {r.director && `dir. ${r.director}`}{r.duration ? ` · ${r.duration} min` : ''}{r.genre ? ` · ${r.genre}` : ''}
+                      </div>
+                      {r.reason?.trim() && (
+                        <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)' }}>&quot;{r.reason}&quot;</div>
+                      )}
+                      {r.programada && <Badge kind="accent">Ya programada</Badge>}
+                      {!r.programada && r.featured ? <Badge kind="accent">Destacada</Badge> : null}
+                      <div className="wl-suggested-by-mobile">
+                        <Avatar {...suggester} size="sm" />
+                        <span>{suggester.name}</span>
+                      </div>
+                      {!r.programada && r.suggestedBy === username && (
+                        <div style={{ display: 'flex', gap: 6, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setEditState({ id: r.id, title: r.title, reason: r.reason ?? '' })}
+                            style={{ fontSize: 11, padding: '2px 8px' }}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => handleDelete(r.id)}
+                            disabled={deleting === r.id}
+                            style={{ fontSize: 11, padding: '2px 8px', color: '#e05252' }}
+                          >
+                            {deleting === r.id ? '…' : 'Eliminar'}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+                <div className="wl-avatar">
+                  <Avatar {...suggester} size="sm" />
+                </div>
+                <div className="wl-vote" onClick={(e) => e.stopPropagation()}>
+                  {r.programada ? (
+                    <span style={{
+                      padding: '8px 14px', borderRadius: 'var(--radius-sm)',
+                      fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      minWidth: 70, justifyContent: 'center',
+                      color: 'var(--ink-mute)', border: '1px solid var(--line)',
+                    }}>
+                      ↑ {r.votes}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleVote(r.id)}
+                      disabled={!username}
+                      style={{
+                        background: votedIds.has(r.id) ? 'var(--accent)' : 'transparent',
+                        color: votedIds.has(r.id) ? 'var(--bg)' : 'var(--ink)',
+                        border: `1px solid ${votedIds.has(r.id) ? 'var(--accent)' : 'var(--line)'}`,
+                        padding: '8px 14px', borderRadius: 'var(--radius-sm)',
+                        fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
+                        cursor: username ? 'pointer' : 'default',
+                        opacity: username ? 1 : 0.4,
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        minWidth: 70, justifyContent: 'center',
+                      }}
+                    >
+                      ↑ {r.votes}
+                    </button>
+                  )}
+                  {r.voters.length > 0 && (
+                    <AvatarStack names={r.voters} max={4} size="sm" profiles={profiles} />
+                  )}
+                </div>
+              </div>
+
+              {/* Detail panel */}
+              {isExpanded && (
+                <div className="wl-detail">
+                  <div className="wl-detail-poster">
+                    <Poster label={(r.title ?? '').toUpperCase().slice(0, 10)} hue={r.posterHue ?? 200} posterPath={r.posterPath} />
+                  </div>
+                  <div className="wl-detail-body">
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontWeight: 800, fontSize: 18, lineHeight: 1.2, textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
+                        {r.title}
+                        {r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 8 }}>{r.year}</span>}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+                        {[r.director && `dir. ${r.director}`, r.duration && `${r.duration} min`, r.genre].filter(Boolean).join(' · ')}
+                      </div>
+                      {r.reason?.trim() && (
+                        <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)', marginTop: 8, lineHeight: 1.5 }}>&ldquo;{r.reason}&rdquo;</div>
+                      )}
+                    </div>
+
+                    <div className="wl-detail-meta">
+                      <div className="wl-detail-section">
+                        <div className="eyebrow" style={{ marginBottom: 6 }}>Sugirió</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Avatar {...suggester} size="sm" />
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{suggester.name}</span>
+                        </div>
+                      </div>
+
+                      {r.voters.length > 0 && (
+                        <div className="wl-detail-section">
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>Votaron ({r.voters.length})</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {r.voters.map((v) => {
+                              const u = resolveUser(profiles, v);
+                              return (
+                                <div key={v} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <Avatar {...u} size="sm" />
+                                  <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{u.name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {r.voters.length === 0 && (
+                        <div className="wl-detail-section">
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>Votos</div>
+                          <span style={{ fontSize: 12, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}>Nadie votó todavía</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: 17, lineHeight: 1.2 }}>
-                    {r.title}
-                    {r.year && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 400, color: 'var(--ink-mute)', marginLeft: 6 }}>&apos;{String(r.year).slice(2)}</span>}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3, marginBottom: 4 }}>
-                    {r.director && `dir. ${r.director}`}{r.duration ? ` · ${r.duration} min` : ''}{r.genre ? ` · ${r.genre}` : ''}
-                  </div>
-                  {r.reason?.trim() && (
-                    <div style={{ fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)' }}>&quot;{r.reason}&quot;</div>
-                  )}
-                  {r.programada && <Badge kind="accent">Ya programada</Badge>}
-                  {!r.programada && r.featured ? <Badge kind="accent">Destacada</Badge> : null}
-                  {!r.programada && r.suggestedBy === username && (
-                    <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setEditState({ id: r.id, title: r.title, reason: r.reason ?? '' })}
-                        style={{ fontSize: 11, padding: '2px 8px' }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleDelete(r.id)}
-                        disabled={deleting === r.id}
-                        style={{ fontSize: 11, padding: '2px 8px', color: '#e05252' }}
-                      >
-                        {deleting === r.id ? '…' : 'Eliminar'}
-                      </button>
-                    </div>
-                  )}
-                </>
               )}
             </div>
-            <div className="wl-avatar">
-              <Avatar {...resolveUser(profiles, r.suggestedBy)} size="sm" />
-            </div>
-            <div className="wl-vote">
-              {r.programada ? (
-                <span style={{
-                  padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-                  fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  minWidth: 70, justifyContent: 'center',
-                  color: 'var(--ink-mute)', border: '1px solid var(--line)',
-                }}>
-                  ↑ {r.votes}
-                </span>
-              ) : (
-                <button
-                  onClick={() => handleVote(r.id)}
-                  disabled={!username}
-                  style={{
-                    background: votedIds.has(r.id) ? 'var(--accent)' : 'transparent',
-                    color: votedIds.has(r.id) ? 'var(--bg)' : 'var(--ink)',
-                    border: `1px solid ${votedIds.has(r.id) ? 'var(--accent)' : 'var(--line)'}`,
-                    padding: '8px 14px', borderRadius: 'var(--radius-sm)',
-                    fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 13,
-                    cursor: username ? 'pointer' : 'default',
-                    opacity: username ? 1 : 0.4,
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    minWidth: 70, justifyContent: 'center',
-                  }}
-                >
-                  ↑ {r.votes}
-                </button>
-              )}
-              {r.voters.length > 0 && (
-                <AvatarStack names={r.voters} max={4} size="sm" profiles={profiles} />
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       </div>
     </div>
