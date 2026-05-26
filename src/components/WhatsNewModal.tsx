@@ -6,7 +6,7 @@ import { WHATS_NEW_VERSION } from '@/lib/changelog';
 const MONTHS = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
 
 function fmtDate(iso: string): string {
-  const [y, m, d] = iso.split('-');
+  const [y, m, d] = iso.slice(0, 10).split('-');
   return `${d} ${MONTHS[+m - 1]} ${y}`;
 }
 

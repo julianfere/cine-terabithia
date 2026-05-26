@@ -22,8 +22,7 @@ function useWhatsNew(features: Feature[]) {
       return;
     }
 
-    const since = stored.slice(0, 10); // yyyy-mm-dd
-    const news = features.filter((f) => f.date >= since);
+    const news = features.filter((f) => f.date > stored);
     if (news.length > 0) {
       setNewOnes(news);
       setOpen(true);
