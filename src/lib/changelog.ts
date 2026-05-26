@@ -1,4 +1,4 @@
-export const WHATS_NEW_VERSION = 'v2.4';
+export const WHATS_NEW_VERSION = 'v2.5';
 export const WHATS_NEW_LS_KEY  = 'ct.whatsNew.lastSeen';
 
 export type Feature = {
@@ -11,6 +11,34 @@ export type Feature = {
 
 // Agregar entradas nuevas al principio. Fechas en ISO yyyy-mm-dd.
 export const WHATS_NEW_FEATURES: Feature[] = [
+  {
+    id:    'feedback-form',
+    date:  '2026-05-26',
+    tag:   'App',
+    title: 'Sugerí o reportá desde el menú',
+    desc:  'Encontrás el link al formulario de feedback en el menú de tu perfil — mandanos ideas, mejoras o bugs directo desde la app.',
+  },
+  {
+    id:    'whats-new-button',
+    date:  '2026-05-26',
+    tag:   'App',
+    title: 'Ver novedades cuando quieras',
+    desc:  'Desde el menú de tu perfil podés abrir el historial de novedades en cualquier momento.',
+  },
+  {
+    id:    'admin-entradas',
+    date:  '2026-05-26',
+    tag:   'Admin',
+    title: 'Gestión de entradas',
+    desc:  'Los admins pueden asignar entradas a los socios para cada función e imprimir los tickets directamente desde el panel.',
+  },
+  {
+    id:    'pwa-install',
+    date:  '2026-05-26',
+    tag:   'App',
+    title: 'Instalá la app desde el celular',
+    desc:  'El botón para instalar la PWA ahora aparece también en mobile — agregala a tu pantalla de inicio desde cualquier dispositivo.',
+  },
   {
     id:    'themes',
     date:  '2026-05-25',

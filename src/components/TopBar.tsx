@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import { Avatar } from './Avatar';
 import PwaInstallButton from './PwaInstallButton';
+import WhatsNewModal from './WhatsNewModal';
+import { WHATS_NEW_FEATURES } from '@/lib/changelog';
 
 type UserSession = { name?: string | null; role?: string };
 type MyProfile = { displayName: string | null; avatar: string | null } | null;
@@ -65,6 +67,24 @@ function IconBell() {
   );
 }
 
+function IconChangelog() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--ink-mute)' }}>
+      <path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+function IconFeedback() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ width: 18, height: 18, flexShrink: 0, color: 'var(--ink-mute)' }}>
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+      <path d="M12 8v4M12 16h.01" />
+    </svg>
+  );
+}
+
 function IconChevron({ open }: { open: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{ width: 12, height: 12, color: 'var(--ink-mute)', transition: 'transform 0.18s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }}>
@@ -83,7 +103,7 @@ export default function TopBar() {
   const [profile, setProfile] = useState<MyProfile>(null);
   const [stats, setStats] = useState<Stats>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [testNotifState, setTestNotifState] = useState<'idle' | 'loading' | 'ok' | 'error' | 'no_sub'>('idle');
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -114,6 +134,7 @@ export default function TopBar() {
   };
 
   return (
+    <>
     <header className="topbar">
       <div className="topbar-inner">
         <Link href="/" className="logo">
@@ -147,9 +168,7 @@ export default function TopBar() {
         </nav>
 
         <div className="topbar-right">
-          <span className="hide-mobile">
-            <PwaInstallButton />
-          </span>
+          <PwaInstallButton />
           {isAdmin && (
             <Link
               href="/admin"
@@ -216,39 +235,20 @@ export default function TopBar() {
                   <IconUser />
                   <span>Mi perfil</span>
                 </Link>
-                <Link href="/perfil" className="pm-item" onClick={() => setMenuOpen(false)}>
-                  <IconPalette />
-                  <span>Personalizar avatar</span>
-                </Link>
-
-                <button
-                  className="pm-item"
-                  disabled={testNotifState === 'loading'}
-                  onClick={async () => {
-                    setTestNotifState('loading');
-                    try {
-                      const res = await fetch('/api/push/test-me', { method: 'POST' });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        setTestNotifState(data.error === 'no_subscriptions' ? 'no_sub' : 'error');
-                      } else {
-                        setTestNotifState('ok');
-                      }
-                    } catch {
-                      setTestNotifState('error');
-                    }
-                    setTimeout(() => setTestNotifState('idle'), 3000);
-                  }}
-                >
-                  <IconBell />
-                  <span style={{ flex: 1 }}>
-                    {testNotifState === 'loading' && 'Enviando...'}
-                    {testNotifState === 'ok' && '¡Notificación enviada!'}
-                    {testNotifState === 'error' && 'Error al enviar'}
-                    {testNotifState === 'no_sub' && 'Activá las notificaciones primero'}
-                    {testNotifState === 'idle' && 'Probar notificaciones'}
-                  </span>
+                <button className="pm-item" onClick={() => { setMenuOpen(false); setWhatsNewOpen(true); }}>
+                  <IconChangelog />
+                  <span>Novedades</span>
                 </button>
+                <a
+                  href="https://forms.gle/x4mdAT8WkppHaL7m9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pm-item"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <IconFeedback />
+                  <span>Sugerir / reportar</span>
+                </a>
 
                 <div className="pm-divider" />
 
@@ -262,5 +262,14 @@ export default function TopBar() {
         </div>
       </div>
     </header>
+
+    {whatsNewOpen && (
+      <WhatsNewModal
+        features={WHATS_NEW_FEATURES}
+        lastSeen={null}
+        onClose={() => setWhatsNewOpen(false)}
+      />
+    )}
+  </>
   );
 }
