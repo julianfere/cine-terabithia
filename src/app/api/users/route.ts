@@ -12,6 +12,7 @@ export async function GET() {
   const rows = await db.select({
     id: users.id,
     username: users.username,
+    displayName: users.displayName,
     role: users.role,
     createdAt: users.createdAt,
   }).from(users);

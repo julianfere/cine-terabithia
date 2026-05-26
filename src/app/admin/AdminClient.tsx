@@ -16,7 +16,7 @@ function fmtDateLong(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
 }
 
-type UserRow = { id: number; username: string; role: string; createdAt: number | null };
+type UserRow = { id: number; username: string; displayName: string | null; role: string; createdAt: number | null };
 type LogRow = { id: number; title: string; body: string; url: string; recipientType: string; recipientUserIds: string | null; sent: number; failed: number; sentAt: number | null };
 
 export default function AdminClient({
@@ -862,9 +862,9 @@ export default function AdminClient({
               {userList.map((u, i) => (
                 <div key={u.id} className="admin-usr-row" style={{ padding: '0 18px', borderBottom: i === userList.length - 1 ? 'none' : '1px solid var(--line)' }}>
                   <div className="admin-usr-member">
-                    <Avatar name={u.username} size="md" />
+                    <Avatar name={u.displayName ?? u.username} size="md" />
                     <div className="admin-usr-member-text">
-                      <div style={{ fontWeight: 700, fontSize: 14 }}>{u.username}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{u.displayName ?? u.username}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', letterSpacing: '0.06em' }}>@{u.username}</div>
                     </div>
                   </div>
@@ -983,8 +983,8 @@ export default function AdminClient({
                           })}
                           style={{ height: 30, padding: '0 12px', borderRadius: 6, border: '1px solid', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, background: selected ? 'rgba(228,98,23,0.12)' : 'transparent', color: selected ? 'var(--accent)' : 'var(--ink-mute)', borderColor: selected ? 'var(--accent)' : 'var(--line)' }}
                         >
-                          <Avatar name={u.username} size="sm" />
-                          {u.username}
+                          <Avatar name={u.displayName ?? u.username} size="sm" />
+                          {u.displayName ?? u.username}
                         </button>
                       );
                     })}
@@ -1160,8 +1160,11 @@ export default function AdminClient({
                               onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(228,98,23,0.10)')}
                               onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'none')}
                             >
-                              <Avatar name={u.username} size="sm" />
-                              <span style={{ fontSize: 13, color: 'var(--ink)' }}>{u.username}</span>
+                              <Avatar name={u.displayName ?? u.username} size="sm" />
+                              <div style={{ lineHeight: 1.2 }}>
+                                <div style={{ fontSize: 13, color: 'var(--ink)' }}>{u.displayName ?? u.username}</div>
+                                {u.displayName && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)' }}>@{u.username}</div>}
+                              </div>
                             </button>
                           ))}
                         </div>
