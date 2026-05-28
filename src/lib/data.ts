@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { movies, screenings, scores, recommendations, recommendationVotes, attendances, users } from '@/db/schema';
+import { movies, screenings, scores, recommendations, recommendationVotes, recommendationComments, attendances, users } from '@/db/schema';
 import { eq, desc, avg, count, asc, and, inArray, or, isNotNull } from 'drizzle-orm';
 import type { ProfilesMap } from './profiles';
 
@@ -55,6 +55,7 @@ export type RecommendationRow = {
   programada: boolean;
   votes: number;
   voters: string[];
+  commentCount: number;
 };
 
 function buildScreeningQuery() {
@@ -214,6 +215,12 @@ async function fetchRecommendationRows(statusFilter: string) {
     votersMap.set(v.recId, arr);
   }
 
+  const commentRows = await db
+    .select({ recId: recommendationComments.recommendationId, cnt: count(recommendationComments.id) })
+    .from(recommendationComments)
+    .groupBy(recommendationComments.recommendationId);
+  const commentCountMap = new Map(commentRows.map((c) => [c.recId, Number(c.cnt)]));
+
   return rows
     .map((r) => ({
       ...r,
@@ -223,6 +230,7 @@ async function fetchRecommendationRows(statusFilter: string) {
       votes: (votersMap.get(r.id) ?? []).length,
       status: r.status ?? 'active',
       programada: false,
+      commentCount: commentCountMap.get(r.id) ?? 0,
     }))
     .sort((a, b) => b.votes - a.votes);
 }

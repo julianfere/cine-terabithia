@@ -136,6 +136,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       const comment: RecommendationComment = await res.json();
       setCommentsMap((p) => ({ ...p, [recId]: [...(p[recId] ?? []), comment] }));
       setCommentInput((p) => ({ ...p, [recId]: '' }));
+      setRecs((p) => p.map((r) => r.id === recId ? { ...r, commentCount: r.commentCount + 1 } : r));
     }
     setCommentLoading((p) => ({ ...p, [recId]: false }));
   };
@@ -191,6 +192,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
     const res = await fetch(`/api/recommendations/${recId}/comments/${commentId}`, { method: 'DELETE' });
     if (res.ok) {
       setCommentsMap((p) => ({ ...p, [recId]: (p[recId] ?? []).filter((c) => c.id !== commentId) }));
+      setRecs((p) => p.map((r) => r.id === recId ? { ...r, commentCount: Math.max(0, r.commentCount - 1) } : r));
     }
   };
 
@@ -349,6 +351,11 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                       )}
                       {r.programada && <Badge kind="accent">Ya programada</Badge>}
                       {!r.programada && r.featured ? <Badge kind="accent">Destacada</Badge> : null}
+                      {r.commentCount > 0 && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                          💬 {r.commentCount}
+                        </span>
+                      )}
                       <div className="wl-suggested-by-mobile">
                         <Avatar {...suggester} size="sm" />
                         <span>{suggester.name}</span>
