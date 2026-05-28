@@ -25,6 +25,17 @@ export type ScreeningRow = {
   scoreCount: number;
 };
 
+export type RecommendationComment = {
+  id: number;
+  recommendationId: number;
+  userId: number;
+  username: string;
+  content: string;
+  createdAt: number;
+  score: number;       // suma de votos (upvotes - downvotes)
+  myVote: 1 | -1 | 0; // voto del usuario actual
+};
+
 export type RecommendationRow = {
   id: number;
   movieId: number;

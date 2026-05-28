@@ -1,4 +1,4 @@
-export const WHATS_NEW_VERSION = 'v2.6';
+export const WHATS_NEW_VERSION = 'v2.7';
 export const WHATS_NEW_LS_KEY  = 'ct.whatsNew.lastSeen';
 
 export type Feature = {
@@ -11,6 +11,13 @@ export type Feature = {
 
 // Agregar entradas nuevas al principio. Fechas en ISO (con hora opcional): 'YYYY-MM-DDTHH:mm:ss'.
 export const WHATS_NEW_FEATURES: Feature[] = [
+  {
+    id:    'recommendation-comments',
+    date:  '2026-05-28',
+    tag:   'Sugeridos',
+    title: 'Comentarios en sugerencias',
+    desc:  'Expandí cualquier película en Sugeridos para dejar un comentario, responder a alguien con @mención, y votar con upvote/downvote al estilo Reddit.',
+  },
   {
     id:    'offline-mode',
     date:  '2026-05-28',

@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
-import type { RecommendationRow } from '@/lib/data';
+import type { RecommendationRow, RecommendationComment } from '@/lib/data';
 import { Poster } from '@/components/Poster';
 import { Badge } from '@/components/Badge';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -12,6 +12,7 @@ type NewRec = { title: string; year: string; director: string; genre: string; du
 const emptyRec = (): NewRec => ({ title: '', year: '', director: '', genre: '', duration: '', why: '', posterPath: null, tmdbId: null });
 
 type EditState = { id: number; title: string; reason: string };
+type CommentEditState = { id: number; content: string };
 
 export default function WatchlistClient({ initialRecs, username, initialVotedIds }: { initialRecs: RecommendationRow[]; username: string | null; initialVotedIds: number[] }) {
   const [recs, setRecs] = useState(initialRecs);
@@ -24,6 +25,10 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const [deleting, setDeleting] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [commentsMap, setCommentsMap] = useState<Record<number, RecommendationComment[]>>({});
+  const [commentInput, setCommentInput] = useState<Record<number, string>>({});
+  const [commentLoading, setCommentLoading] = useState<Record<number, boolean>>({});
+  const [commentEdit, setCommentEdit] = useState<CommentEditState | null>(null);
 
   const sorted = useMemo(() => {
     const list = filter === 'mine' && username
@@ -107,6 +112,86 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
     const res = await fetch(`/api/recommendations/${id}`, { method: 'DELETE' });
     if (res.ok) setRecs((prev) => prev.filter((r) => r.id !== id));
     setDeleting(null);
+  };
+
+  const handleExpand = async (id: number) => {
+    const next = expandedId === id ? null : id;
+    setExpandedId(next);
+    if (next !== null && !(next in commentsMap)) {
+      const res = await fetch(`/api/recommendations/${next}/comments`);
+      if (res.ok) { const data = await res.json(); setCommentsMap((p) => ({ ...p, [next]: data })); }
+    }
+  };
+
+  const handleComment = async (recId: number) => {
+    const content = commentInput[recId]?.trim();
+    if (!content || !username) return;
+    setCommentLoading((p) => ({ ...p, [recId]: true }));
+    const res = await fetch(`/api/recommendations/${recId}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (res.ok) {
+      const comment: RecommendationComment = await res.json();
+      setCommentsMap((p) => ({ ...p, [recId]: [...(p[recId] ?? []), comment] }));
+      setCommentInput((p) => ({ ...p, [recId]: '' }));
+    }
+    setCommentLoading((p) => ({ ...p, [recId]: false }));
+  };
+
+  const handleCommentVote = async (recId: number, commentId: number, value: 1 | -1) => {
+    if (!username) return;
+    setCommentsMap((p) => ({
+      ...p,
+      [recId]: (p[recId] ?? []).map((c) => {
+        if (c.id !== commentId) return c;
+        const score = Number(c.score) || 0;
+        const prev = Number(c.myVote) || 0;
+        const removing = prev === value;
+        return { ...c, myVote: (removing ? 0 : value) as 1 | -1 | 0, score: score - prev + (removing ? 0 : value) };
+      }),
+    }));
+    const res = await fetch(`/api/recommendations/${recId}/comments/${commentId}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value }),
+    });
+    if (res.ok) {
+      const { myVote } = await res.json();
+      setCommentsMap((p) => ({
+        ...p,
+        [recId]: (p[recId] ?? []).map((c) => {
+          if (c.id !== commentId) return c;
+          const score = Number(c.score) || 0;
+          const prev = Number(c.myVote) || 0;
+          return { ...c, myVote: myVote as 1 | -1 | 0, score: score - prev + Number(myVote) };
+        }),
+      }));
+    }
+  };
+
+  const handleCommentEditSave = async (recId: number) => {
+    if (!commentEdit) return;
+    const res = await fetch(`/api/recommendations/${recId}/comments/${commentEdit.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: commentEdit.content }),
+    });
+    if (res.ok) {
+      setCommentsMap((p) => ({
+        ...p,
+        [recId]: (p[recId] ?? []).map((c) => c.id === commentEdit.id ? { ...c, content: commentEdit.content } : c),
+      }));
+      setCommentEdit(null);
+    }
+  };
+
+  const handleCommentDelete = async (recId: number, commentId: number) => {
+    const res = await fetch(`/api/recommendations/${recId}/comments/${commentId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setCommentsMap((p) => ({ ...p, [recId]: (p[recId] ?? []).filter((c) => c.id !== commentId) }));
+    }
   };
 
   const handleEditSave = async () => {
@@ -221,7 +306,7 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
               <div
                 className={`wl-row${isExpanded ? ' wl-row-expanded' : ''}`}
                 style={{ opacity: r.programada ? 0.55 : 1, cursor: 'pointer' }}
-                onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                onClick={() => handleExpand(r.id)}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elev)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = isExpanded ? 'var(--bg-elev)' : '')}
               >
@@ -379,6 +464,140 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                         <div className="wl-detail-section">
                           <div className="eyebrow" style={{ marginBottom: 6 }}>Votos</div>
                           <span style={{ fontSize: 12, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}>Nadie votó todavía</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Comentarios */}
+                    <div style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+                      <div className="eyebrow" style={{ marginBottom: 12 }}>
+                        Comentarios{commentsMap[r.id]?.length ? ` (${commentsMap[r.id].length})` : ''}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
+                        {!commentsMap[r.id] && (
+                          <span style={{ fontSize: 12, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}>Cargando…</span>
+                        )}
+                        {commentsMap[r.id]?.length === 0 && (
+                          <span style={{ fontSize: 12, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}>Sin comentarios todavía</span>
+                        )}
+                        {commentsMap[r.id]?.map((c) => {
+                          const u = resolveUser(profiles, c.username);
+                          const isOwn = c.username === username;
+                          const isEditing = commentEdit?.id === c.id;
+                          return (
+                            <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                              <Avatar {...u} size="sm" />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3 }}>
+                                  <span style={{ fontWeight: 600, fontSize: 12 }}>{u.name}</span>
+                                  <span style={{ fontSize: 10, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}>
+                                    {new Date(c.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                </div>
+                                {isEditing ? (
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <textarea
+                                      value={commentEdit.content}
+                                      onChange={(e) => setCommentEdit((s) => s ? { ...s, content: e.target.value } : s)}
+                                      rows={2}
+                                      style={{
+                                        flex: 1, background: 'var(--bg)', border: '1px solid var(--accent)',
+                                        borderRadius: 'var(--radius-sm)', padding: '6px 8px',
+                                        fontSize: 13, color: 'var(--ink)', outline: 'none', resize: 'none',
+                                      }}
+                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                      <button className="btn btn-primary btn-sm" style={{ fontSize: 11 }} onClick={() => handleCommentEditSave(r.id)} disabled={!commentEdit.content.trim()}>Guardar</button>
+                                      <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={() => setCommentEdit(null)}>Cancelar</button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: 13, color: 'var(--ink-soft)', lineHeight: 1.45, marginBottom: 4 }}>{c.content}</div>
+                                )}
+                                {!isEditing && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                      <button
+                                        onClick={() => handleCommentVote(r.id, c.id, 1)}
+                                        disabled={!username}
+                                        title="Upvote"
+                                        style={{
+                                          background: 'none', border: 'none', padding: '0 2px', cursor: username ? 'pointer' : 'default',
+                                          fontSize: 12, lineHeight: 1,
+                                          color: c.myVote === 1 ? 'var(--accent)' : 'var(--ink-mute)',
+                                        }}
+                                      >▲</button>
+                                      <span style={{
+                                        fontFamily: 'var(--font-mono)', fontSize: 11, minWidth: 12, textAlign: 'center',
+                                        color: c.score > 0 ? 'var(--accent)' : c.score < 0 ? '#e05252' : 'var(--ink-mute)',
+                                        fontWeight: 600,
+                                      }}>
+                                        {Number(c.score) || 0}
+                                      </span>
+                                      <button
+                                        onClick={() => handleCommentVote(r.id, c.id, -1)}
+                                        disabled={!username}
+                                        title="Downvote"
+                                        style={{
+                                          background: 'none', border: 'none', padding: '0 2px', cursor: username ? 'pointer' : 'default',
+                                          fontSize: 12, lineHeight: 1,
+                                          color: c.myVote === -1 ? '#e05252' : 'var(--ink-mute)',
+                                        }}
+                                      >▼</button>
+                                    </div>
+                                    {username && (
+                                      <button
+                                        onClick={() => setCommentInput((p) => ({ ...p, [r.id]: `@${c.username} ` }))}
+                                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}
+                                      >
+                                        Responder
+                                      </button>
+                                    )}
+                                    {isOwn && (
+                                      <>
+                                        <button
+                                          onClick={() => setCommentEdit({ id: c.id, content: c.content })}
+                                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--ink-mute)', fontFamily: 'var(--font-mono)' }}
+                                        >
+                                          Editar
+                                        </button>
+                                        <button
+                                          onClick={() => handleCommentDelete(r.id, c.id)}
+                                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: '#e05252', fontFamily: 'var(--font-mono)' }}
+                                        >
+                                          Eliminar
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {username && (
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                          <textarea
+                            value={commentInput[r.id] ?? ''}
+                            onChange={(e) => setCommentInput((p) => ({ ...p, [r.id]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleComment(r.id); } }}
+                            placeholder="Escribí un comentario… (Enter para enviar)"
+                            rows={2}
+                            style={{
+                              flex: 1, background: 'var(--bg)', border: '1px solid var(--line)',
+                              borderRadius: 'var(--radius-sm)', padding: '8px 10px',
+                              fontSize: 13, color: 'var(--ink)', outline: 'none', resize: 'none',
+                            }}
+                          />
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleComment(r.id)}
+                            disabled={!commentInput[r.id]?.trim() || commentLoading[r.id]}
+                            style={{ flexShrink: 0 }}
+                          >
+                            {commentLoading[r.id] ? '…' : 'Enviar'}
+                          </button>
                         </div>
                       )}
                     </div>
