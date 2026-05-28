@@ -1,4 +1,4 @@
-export const WHATS_NEW_VERSION = 'v2.5';
+export const WHATS_NEW_VERSION = 'v2.6';
 export const WHATS_NEW_LS_KEY  = 'ct.whatsNew.lastSeen';
 
 export type Feature = {
@@ -11,6 +11,13 @@ export type Feature = {
 
 // Agregar entradas nuevas al principio. Fechas en ISO (con hora opcional): 'YYYY-MM-DDTHH:mm:ss'.
 export const WHATS_NEW_FEATURES: Feature[] = [
+  {
+    id:    'offline-mode',
+    date:  '2026-05-28',
+    tag:   'App',
+    title: 'Modo offline',
+    desc:  'La app funciona sin conexión: los pósters se guardan en caché, las confirmaciones de asistencia y votos se sincronizan automáticamente cuando volvés a conectarte.',
+  },
   {
     id:    'watchlist-detail',
     date:  '2026-05-26T21:00:00',
