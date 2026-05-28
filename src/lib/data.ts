@@ -294,6 +294,12 @@ export async function getPublicRecommendations(): Promise<RecommendationRow[]> {
     votersMap.set(v.recId, arr);
   }
 
+  const commentRows = await db
+    .select({ recId: recommendationComments.recommendationId, cnt: count(recommendationComments.id) })
+    .from(recommendationComments)
+    .groupBy(recommendationComments.recommendationId);
+  const commentCountMap = new Map(commentRows.map((c) => [c.recId, Number(c.cnt)]));
+
   return rows
     .map((r) => ({
       ...r,
@@ -303,6 +309,7 @@ export async function getPublicRecommendations(): Promise<RecommendationRow[]> {
       votes: (votersMap.get(r.id) ?? []).length,
       status: r.status ?? 'active',
       programada: r.status === 'assigned',
+      commentCount: commentCountMap.get(r.id) ?? 0,
     }))
     .sort((a, b) => {
       if (a.programada !== b.programada) return a.programada ? -1 : 1;
