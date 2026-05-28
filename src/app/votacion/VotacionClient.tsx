@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { queueRequest } from '@/lib/offline-queue';
 import Link from 'next/link';
 import type { ScreeningRow } from '@/lib/data';
 import { Poster } from '@/components/Poster';
@@ -31,28 +32,64 @@ export default function VotacionClient({ screening, candidates: initialCandidate
 
   const handleVote = async (recId: number) => {
     if (!username) return;
-    const res = await fetch('/api/votacion', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ screeningId: screening.id, recommendationId: recId }),
-    });
-    if (res.ok) {
-      const { voted, changed } = await res.json();
-      const prevVote = myVote;
-      setCandidates((prev) => prev.map((c) => {
-        if (c.id === recId) {
-          const voters = voted
-            ? [...c.voters, username]
-            : c.voters.filter((v) => v !== username);
-          return { ...c, voters, totalVotos: voters.length };
+    const prevVote = myVote;
+
+    // Optimistic update
+    const optimisticVoted = myVote !== recId;
+    const optimisticChanged = optimisticVoted && myVote !== null;
+    setCandidates((prev) => prev.map((c) => {
+      if (c.id === recId) {
+        const voters = optimisticVoted ? [...c.voters, username] : c.voters.filter((v) => v !== username);
+        return { ...c, voters, totalVotos: voters.length };
+      }
+      if (optimisticChanged && c.id === prevVote) {
+        const voters = c.voters.filter((v) => v !== username);
+        return { ...c, voters, totalVotos: voters.length };
+      }
+      return c;
+    }).sort((a, b) => b.totalVotos - a.totalVotos));
+    setMyVote(optimisticVoted ? recId : null);
+
+    try {
+      const res = await fetch('/api/votacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ screeningId: screening.id, recommendationId: recId }),
+      });
+      if (res.ok) {
+        const { voted, changed } = await res.json();
+        // Reconcile if server disagrees with optimistic state
+        if (voted !== optimisticVoted || changed !== optimisticChanged) {
+          setCandidates((prev) => prev.map((c) => {
+            if (c.id === recId) {
+              const voters = voted ? [...c.voters.filter((v) => v !== username), username] : c.voters.filter((v) => v !== username);
+              return { ...c, voters, totalVotos: voters.length };
+            }
+            if (changed && c.id === prevVote) {
+              const voters = c.voters.filter((v) => v !== username);
+              return { ...c, voters, totalVotos: voters.length };
+            }
+            return c;
+          }).sort((a, b) => b.totalVotos - a.totalVotos));
+          setMyVote(voted ? recId : null);
         }
-        if (changed && c.id === prevVote) {
-          const voters = c.voters.filter((v) => v !== username);
-          return { ...c, voters, totalVotos: voters.length };
-        }
-        return c;
-      }).sort((a, b) => b.totalVotos - a.totalVotos));
-      setMyVote(voted ? recId : null);
+      } else {
+        // Revert optimistic on server error
+        setCandidates((prev) => prev.map((c) => {
+          if (c.id === recId) {
+            const voters = c.voters.filter((v) => v !== username);
+            return { ...c, voters, totalVotos: voters.length };
+          }
+          if (optimisticChanged && c.id === prevVote) {
+            return { ...c, voters: [...c.voters, username], totalVotos: c.totalVotos + 1 };
+          }
+          return c;
+        }).sort((a, b) => b.totalVotos - a.totalVotos));
+        setMyVote(prevVote);
+      }
+    } catch {
+      // Network error — queue and keep optimistic state
+      await queueRequest('/api/votacion', 'POST', { screeningId: screening.id, recommendationId: recId }).catch(() => {});
     }
   };
 

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { queueRequest } from '@/lib/offline-queue';
 
 export function AttendanceButton({
   screeningId,
@@ -13,10 +14,17 @@ export function AttendanceButton({
 
   const toggle = async () => {
     setLoading(true);
-    const res = await fetch(`/api/screenings/${screeningId}/attendance`, {
-      method: 'POST',
-    });
-    if (res.ok) setAttending(a => !a);
+    const prev = attending;
+    setAttending((a) => !a); // optimistic
+    try {
+      const res = await fetch(`/api/screenings/${screeningId}/attendance`, {
+        method: 'POST',
+      });
+      if (!res.ok) setAttending(prev); // revert on server error
+    } catch {
+      // Network error — queue for sync, keep optimistic state
+      await queueRequest(`/api/screenings/${screeningId}/attendance`, 'POST').catch(() => {});
+    }
     setLoading(false);
   };
 

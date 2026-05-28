@@ -4,6 +4,7 @@ import './globals.css';
 import TopBar from '@/components/TopBar';
 import { Providers } from '@/components/Providers';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import UpdateBanner from '@/components/UpdateBanner';
 import WhatsNewGate from '@/components/WhatsNewGate';
 import AccentProvider from '@/components/AccentProvider';
 import { ACCENT_INIT_SCRIPT } from '@/lib/themes';
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <WhatsNewGate />
         </Providers>
         <ServiceWorkerRegister />
+        <UpdateBanner />
       </body>
     </html>
   );
