@@ -38,10 +38,8 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <Script id="accent-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
-      </head>
       <body>
+        <Script id="accent-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
         <Providers>
           <AccentProvider />
           <div className="app">

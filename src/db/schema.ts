@@ -1,4 +1,4 @@
-import { pgTable, text, integer, serial, bigint, boolean, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, serial, bigint, boolean, unique, index } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -87,6 +87,25 @@ export const attendances = pgTable('attendances', {
   createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 }, (t) => ({
   uniqueAttendance: unique().on(t.screeningId, t.userId),
+}));
+
+export const recommendationComments = pgTable('recommendation_comments', {
+  id: serial('id').primaryKey(),
+  recommendationId: integer('recommendation_id').references(() => recommendations.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  content: text('content').notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+});
+
+export const recommendationCommentVotes = pgTable('recommendation_comment_votes', {
+  id: serial('id').primaryKey(),
+  commentId: integer('comment_id').references(() => recommendationComments.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  value: integer('value').notNull(), // 1 = upvote, -1 = downvote
+  createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+}, (t) => ({
+  uniqueVote: unique().on(t.commentId, t.userId),
+  commentIdx: index().on(t.commentId),
 }));
 
 export const pushSubscriptions = pgTable('push_subscriptions', {

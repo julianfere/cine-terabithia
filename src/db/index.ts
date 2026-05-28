@@ -9,9 +9,11 @@ const globalForDb = global as unknown as {
 
 export function getDb() {
   if (!globalForDb._db) {
+    const url = process.env.DATABASE_URL ?? '';
+    const isLocal = url.includes('127.0.0.1') || url.includes('localhost');
     globalForDb._pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      connectionString: url,
+      ssl: isLocal ? false : { rejectUnauthorized: false },
       max: 1,
     });
     globalForDb._db = drizzle(globalForDb._pool, { schema });
