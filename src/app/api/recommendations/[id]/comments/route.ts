@@ -69,5 +69,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     .values({ recommendationId: recId, userId, content: content.trim() })
     .returning();
 
-  return NextResponse.json({ ...comment, username: session.user.name, score: 0, myVote: 0 }, { status: 201 });
+  return NextResponse.json({ ...comment, username: session?.user?.name, score: 0, myVote: 0 }, { status: 201 });
 }

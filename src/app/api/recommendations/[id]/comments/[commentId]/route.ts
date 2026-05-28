@@ -39,7 +39,7 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   if (isNaN(cId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const db = getDb();
-  const isAdmin = session.user.role === 'admin';
+  const isAdmin = session?.user?.role === 'admin';
   const condition = isAdmin
     ? eq(recommendationComments.id, cId)
     : and(eq(recommendationComments.id, cId), eq(recommendationComments.userId, userId));
