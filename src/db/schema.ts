@@ -117,6 +117,15 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 });
 
+export const pageViews = pgTable('page_views', {
+  id: serial('id').primaryKey(),
+  path: text('path').notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  sessionId: text('session_id'),
+  userAgent: text('user_agent'),
+  createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+});
+
 export const notificationLogs = pgTable('notification_logs', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
