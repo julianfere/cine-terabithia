@@ -18,9 +18,10 @@ function fmtDateLong(d: string) {
 
 type UserRow = { id: number; username: string; displayName: string | null; role: string; createdAt: number | null };
 type LogRow = { id: number; title: string; body: string; url: string; recipientType: string; recipientUserIds: string | null; sent: number; failed: number; sentAt: number | null };
+type AnalyticsRow = { id: number; path: string; userId: number | null; sessionId: string | null; createdAt: number | null };
 
 export default function AdminClient({
-  screenings, recs, assignedRecs, initialUsers, subscribedUserIds, initialLogs,
+  screenings, recs, assignedRecs, initialUsers, subscribedUserIds, initialLogs, analyticsRows,
 }: {
   screenings: ScreeningRow[];
   recs: RecommendationRow[];
@@ -28,8 +29,9 @@ export default function AdminClient({
   initialUsers: UserRow[];
   subscribedUserIds: number[];
   initialLogs: LogRow[];
+  analyticsRows: AnalyticsRow[];
 }) {
-  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones' | 'entradas'>('funciones');
+  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones' | 'entradas' | 'actividad'>('funciones');
   const [entrScreeningId, setEntrScreeningId] = useState<number | null>(null);
   const [entrAttendees, setEntrAttendees] = useState<AttendanceRow[]>([]);
   const [entrSearch, setEntrSearch] = useState('');
@@ -471,6 +473,7 @@ export default function AdminClient({
             { key: 'watchlist' as const, label: 'Sugeridos', count: recList.length + assignedRecList.length },
             { key: 'usuarios' as const, label: 'Usuarios', count: userList.length },
             { key: 'notificaciones' as const, label: 'Notificaciones', count: subscribedUserIds.length },
+            { key: 'actividad' as const, label: 'Actividad', count: analyticsRows.length },
           ]).map((item) => (
             <li
               key={item.key}
@@ -1302,6 +1305,180 @@ export default function AdminClient({
             </form>
           </section>
         )}
+
+        {/* ── ACTIVIDAD ── */}
+        {tab === 'actividad' && (() => {
+          const now = Date.now();
+          const day = 86400000;
+
+          // Agrupar vistas por día (últimos 14 días)
+          const dayBuckets: Record<string, number> = {};
+          for (let i = 13; i >= 0; i--) {
+            const d = new Date(now - i * day);
+            const k = d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+            dayBuckets[k] = 0;
+          }
+          for (const row of analyticsRows) {
+            if (!row.createdAt) continue;
+            const age = now - row.createdAt;
+            if (age > 14 * day) continue;
+            const k = new Date(row.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+            if (k in dayBuckets) dayBuckets[k]++;
+          }
+          const dayEntries = Object.entries(dayBuckets);
+          const maxDay = Math.max(...dayEntries.map(([, v]) => v), 1);
+
+          // Vistas por ruta
+          const pathCounts: Record<string, number> = {};
+          for (const row of analyticsRows) {
+            pathCounts[row.path] = (pathCounts[row.path] ?? 0) + 1;
+          }
+          const topPaths = Object.entries(pathCounts).sort((a, b) => b[1] - a[1]).slice(0, 8);
+          const maxPath = Math.max(...topPaths.map(([, v]) => v), 1);
+
+          // Actividad por usuario (últimos 30 días)
+          const cutoff30 = now - 30 * day;
+          const userActivity: Record<number, { views: number; lastSeen: number; paths: Set<string> }> = {};
+          for (const row of analyticsRows) {
+            if (!row.userId || !row.createdAt) continue;
+            if (!userActivity[row.userId]) userActivity[row.userId] = { views: 0, lastSeen: 0, paths: new Set() };
+            userActivity[row.userId].views++;
+            if (row.createdAt > userActivity[row.userId].lastSeen) userActivity[row.userId].lastSeen = row.createdAt;
+            userActivity[row.userId].paths.add(row.path);
+          }
+
+          // Usuarios sin actividad en últimos 30 días
+          const activeUserIds = new Set(
+            analyticsRows.filter(r => r.userId && r.createdAt && r.createdAt > cutoff30).map(r => r.userId!)
+          );
+
+          const totalViews = analyticsRows.length;
+          const uniqueSessions = new Set(analyticsRows.map(r => r.sessionId).filter(Boolean)).size;
+          const todayViews = analyticsRows.filter(r => r.createdAt && r.createdAt > now - day).length;
+
+          return (
+            <section>
+              {pageHead('Admin / Actividad', 'Actividad')}
+
+              {/* Stats rápidas */}
+              <div className="admin-stats-4" style={{ marginBottom: 28 }}>
+                {statCard('Vistas (últimas 500)', totalViews, `${uniqueSessions} sesiones únicas`)}
+                {statCard('Hoy', todayViews, 'page views')}
+                {statCard('Usuarios activos', activeUserIds.size, 'últimos 30 días')}
+                {statCard('Inactivos', initialUsers.filter(u => !activeUserIds.has(u.id)).length, 'sin actividad en 30 días')}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+
+                {/* Gráfico de actividad diaria */}
+                <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, padding: '18px 20px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16 }}>Vistas · 14 días</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
+                    {dayEntries.map(([label, count]) => (
+                      <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
+                        <div
+                          title={`${label}: ${count}`}
+                          style={{
+                            width: '100%', borderRadius: '3px 3px 0 0',
+                            background: count > 0 ? 'var(--accent)' : 'var(--bg-card)',
+                            height: `${Math.max((count / maxDay) * 100, count > 0 ? 8 : 2)}%`,
+                            opacity: count > 0 ? 1 : 0.3,
+                            transition: 'height 0.2s',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-mute)' }}>{dayEntries[0]?.[0]}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--ink-mute)' }}>{dayEntries[dayEntries.length - 1]?.[0]}</span>
+                  </div>
+                </div>
+
+                {/* Top páginas */}
+                <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, padding: '18px 20px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16 }}>Top páginas</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {topPaths.map(([path, count]) => (
+                      <div key={path} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-soft)', minWidth: 110, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{path}</span>
+                        <div style={{ flex: 1, background: 'var(--bg-card)', borderRadius: 3, height: 6, overflow: 'hidden' }}>
+                          <div style={{ width: `${(count / maxPath) * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: 3 }} />
+                        </div>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', minWidth: 24, textAlign: 'right' as const }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla de usuarios con actividad */}
+              <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Usuarios · actividad últimos 30 días</div>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ ...tblHeadInline, height: 36 }}>
+                      <th style={{ textAlign: 'left' as const, padding: '0 20px', fontWeight: 500 }}>Usuario</th>
+                      <th style={{ textAlign: 'left' as const, padding: '0 12px', fontWeight: 500 }}>Último acceso</th>
+                      <th style={{ textAlign: 'right' as const, padding: '0 12px', fontWeight: 500 }}>Vistas</th>
+                      <th style={{ textAlign: 'right' as const, padding: '0 20px', fontWeight: 500 }}>Páginas distintas</th>
+                      <th style={{ textAlign: 'center' as const, padding: '0 20px', fontWeight: 500 }}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {initialUsers
+                      .slice()
+                      .sort((a, b) => {
+                        const aLast = userActivity[a.id]?.lastSeen ?? 0;
+                        const bLast = userActivity[b.id]?.lastSeen ?? 0;
+                        return bLast - aLast;
+                      })
+                      .map((u) => {
+                        const act = userActivity[u.id];
+                        const isActive = activeUserIds.has(u.id);
+                        const lastSeen = act?.lastSeen
+                          ? new Date(act.lastSeen).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                          : '—';
+                        return (
+                          <tr key={u.id} style={{ ...tblRowInline, height: 46, borderBottom: '1px solid var(--line)' }}>
+                            <td style={{ padding: '0 20px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <Avatar name={u.displayName ?? u.username} avatarId={null} size="sm" />
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2 }}>{u.displayName ?? u.username}</div>
+                                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--ink-mute)' }}>@{u.username}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding: '0 12px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>{lastSeen}</td>
+                            <td style={{ padding: '0 12px', textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: isActive ? 'var(--ink)' : 'var(--ink-mute)' }}>
+                              {act?.views ?? 0}
+                            </td>
+                            <td style={{ padding: '0 20px', textAlign: 'right' as const, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)' }}>
+                              {act?.paths.size ?? 0}
+                            </td>
+                            <td style={{ padding: '0 20px', textAlign: 'center' as const }}>
+                              <span style={{
+                                fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em',
+                                padding: '3px 10px', borderRadius: 999,
+                                background: isActive ? 'rgba(108, 192, 108, 0.12)' : 'var(--bg-card)',
+                                color: isActive ? '#6CC06C' : 'var(--ink-mute)',
+                                border: `1px solid ${isActive ? 'rgba(108,192,108,0.3)' : 'var(--line)'}`,
+                              }}>
+                                {isActive ? 'Activo' : 'Inactivo'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          );
+        })()}
       </main>
 
       {/* ═══ MODAL: Quick create ═══════════════════════════════════════════ */}
