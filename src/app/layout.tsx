@@ -7,6 +7,7 @@ import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 import UpdateBanner from '@/components/UpdateBanner';
 import WhatsNewGate from '@/components/WhatsNewGate';
 import AccentProvider from '@/components/AccentProvider';
+import PageTracker from '@/components/PageTracker';
 import { ACCENT_INIT_SCRIPT } from '@/lib/themes';
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="accent-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ACCENT_INIT_SCRIPT }} />
         <Providers>
           <AccentProvider />
+          <PageTracker />
           <div className="app">
             <TopBar />
             {children}
