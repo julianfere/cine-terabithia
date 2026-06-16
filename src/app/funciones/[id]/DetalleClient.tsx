@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { ScreeningRow } from '@/lib/data';
 import { Poster } from '@/components/Poster';
@@ -31,6 +31,43 @@ function CheckIcon() {
   );
 }
 
+function TrailerModal({ trailerKey, title, onClose }: { trailerKey: string; title: string; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 999,
+        background: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 900, position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+            Trailer · {title}
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+          >
+            ✕
+          </button>
+        </div>
+        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 8, overflow: 'hidden' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
+            title={`Trailer — ${title}`}
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TicketIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{ width: 18, height: 18 }}>
@@ -56,6 +93,16 @@ export default function DetalleClient({
   const [scores, setScores] = useState(initialScores);
   const [filterStar, setFilterStar] = useState<number | null>(null);
   const profiles = useProfiles();
+  const [trailerKey, setTrailerKey] = useState<string | null | undefined>(undefined);
+  const [trailerModal, setTrailerModal] = useState(false);
+
+  useEffect(() => {
+    if (!screening.tmdbId) return;
+    fetch(`/api/movies/${screening.tmdbId}`)
+      .then((r) => r.json())
+      .then((d) => setTrailerKey(d.trailerKey ?? null))
+      .catch(() => setTrailerKey(null));
+  }, [screening.tmdbId]);
   const initialMyScore = username ? initialScores.find((s) => s.username === username) : null;
   const [myRating, setMyRating] = useState(initialMyScore?.score ?? 0);
   const [myComment, setMyComment] = useState(initialMyScore?.comment ?? '');
@@ -120,6 +167,10 @@ export default function DetalleClient({
   const isUpcomingWithMovie = screening.status === 'upcoming' && !!screening.title;
 
   return (
+    <>
+    {trailerModal && trailerKey && (
+      <TrailerModal trailerKey={trailerKey} title={screening.title ?? ''} onClose={() => setTrailerModal(false)} />
+    )}
     <div className="page-enter shell" style={{ paddingTop: 24 }}>
       <Link href="/calendario" className="btn btn-ghost btn-sm" style={{ marginBottom: 24, display: 'inline-flex' }}>
         ← Calendario
@@ -154,9 +205,26 @@ export default function DetalleClient({
             </div>
 
             {screening.synopsis && (
-              <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-soft)', lineHeight: 1.45, margin: '0 0 28px', borderLeft: '2px solid var(--line-soft)', paddingLeft: 14 }}>
+              <p style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-soft)', lineHeight: 1.45, margin: '0 0 20px', borderLeft: '2px solid var(--line-soft)', paddingLeft: 14 }}>
                 {screening.synopsis}
               </p>
+            )}
+
+            {trailerKey && (
+              <div style={{ marginBottom: 28 }}>
+                <button
+                  onClick={() => setTrailerModal(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'var(--accent)', color: 'var(--bg)',
+                    border: 'none', borderRadius: 'var(--radius-sm)',
+                    padding: '10px 18px', fontWeight: 700, fontSize: 14,
+                    cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  ▶ Ver trailer
+                </button>
+              </div>
             )}
 
             {/* Facts grid */}
@@ -325,8 +393,25 @@ export default function DetalleClient({
               )}
             </h1>
             {screening.director && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 28 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--ink-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: trailerKey ? 16 : 28 }}>
                 dir. {screening.director}{screening.duration ? ` · ${screening.duration} min` : ''}
+              </div>
+            )}
+
+            {trailerKey && (
+              <div style={{ marginBottom: 28 }}>
+                <button
+                  onClick={() => setTrailerModal(true)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'var(--accent)', color: 'var(--bg)',
+                    border: 'none', borderRadius: 'var(--radius-sm)',
+                    padding: '10px 18px', fontWeight: 700, fontSize: 14,
+                    cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  ▶ Ver trailer
+                </button>
               </div>
             )}
 
@@ -448,5 +533,6 @@ export default function DetalleClient({
         }
       `}</style>
     </div>
+    </>
   );
 }

@@ -21,6 +21,7 @@ export type ScreeningRow = {
   posterPath: string | null;
   duration: number | null;
   synopsis: string | null;
+  tmdbId: number | null;
   avgScore: number | null;
   scoreCount: number;
 };
@@ -79,6 +80,7 @@ function buildScreeningQuery() {
       posterPath: movies.posterPath,
       duration: movies.duration,
       synopsis: movies.synopsis,
+      tmdbId: movies.tmdbId,
     })
     .from(screenings)
     .leftJoin(movies, eq(screenings.movieId, movies.id));
@@ -364,6 +366,7 @@ export async function getAttendedScreeningsForUser(userId: number): Promise<Atte
       posterPath: movies.posterPath,
       duration: movies.duration,
       synopsis: movies.synopsis,
+      tmdbId: movies.tmdbId,
     })
     .from(screenings)
     .innerJoin(attendances, and(eq(screenings.id, attendances.screeningId), eq(attendances.userId, userId)))

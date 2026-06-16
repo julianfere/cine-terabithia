@@ -1,4 +1,4 @@
-export const WHATS_NEW_VERSION = 'v2.7';
+export const WHATS_NEW_VERSION = 'v2.8';
 export const WHATS_NEW_LS_KEY  = 'ct.whatsNew.lastSeen';
 
 export type Feature = {
@@ -11,6 +11,13 @@ export type Feature = {
 
 // Agregar entradas nuevas al principio. Fechas en ISO (con hora opcional): 'YYYY-MM-DDTHH:mm:ss'.
 export const WHATS_NEW_FEATURES: Feature[] = [
+  {
+    id:    'trailer-en-ingles',
+    date:  '2026-06-16',
+    tag:   'Funciones',
+    title: 'Trailers de películas',
+    desc:  'Ahora podés ver el trailer oficial de cada película directamente desde la página de la función.',
+  },
   {
     id:    'recommendation-comments',
     date:  '2026-05-28',

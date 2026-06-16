@@ -14,6 +14,43 @@ const emptyRec = (): NewRec => ({ title: '', year: '', director: '', genre: '', 
 type EditState = { id: number; title: string; reason: string };
 type CommentEditState = { id: number; content: string };
 
+function TrailerModal({ trailerKey, title, onClose }: { trailerKey: string; title: string; onClose: () => void }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 999,
+        background: 'rgba(0,0,0,0.85)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+    >
+      <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: 900, position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.5)' }}>
+            Trailer · {title}
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: '0 4px' }}
+          >
+            ✕
+          </button>
+        </div>
+        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: 8, overflow: 'hidden' }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
+            title={`Trailer — ${title}`}
+            allow="autoplay; encrypted-media; fullscreen"
+            allowFullScreen
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function WatchlistClient({ initialRecs, username, initialVotedIds }: { initialRecs: RecommendationRow[]; username: string | null; initialVotedIds: number[] }) {
   const [recs, setRecs] = useState(initialRecs);
   const profiles = useProfiles();
@@ -29,6 +66,32 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const [commentInput, setCommentInput] = useState<Record<number, string>>({});
   const [commentLoading, setCommentLoading] = useState<Record<number, boolean>>({});
   const [commentEdit, setCommentEdit] = useState<CommentEditState | null>(null);
+  const [trailerKeys, setTrailerKeys] = useState<Record<number, string | null>>({});
+  const [trailerModal, setTrailerModal] = useState<{ key: string; title: string } | null>(null);
+
+  const fetchTrailer = async (recId: number, tmdbId: number | null) => {
+    if (!tmdbId || recId in trailerKeys) return;
+    const res = await fetch(`/api/movies/${tmdbId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setTrailerKeys((p) => ({ ...p, [recId]: data.trailerKey ?? null }));
+    } else {
+      setTrailerKeys((p) => ({ ...p, [recId]: null }));
+    }
+  };
+
+  const openTrailer = (recId: number, tmdbId: number | null, title: string) => {
+    const key = trailerKeys[recId];
+    if (key) { setTrailerModal({ key, title }); return; }
+    if (!tmdbId) return;
+    fetch(`/api/movies/${tmdbId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const k = data.trailerKey ?? null;
+        setTrailerKeys((p) => ({ ...p, [recId]: k }));
+        if (k) setTrailerModal({ key: k, title });
+      });
+  };
 
   const sorted = useMemo(() => {
     const list = filter === 'mine' && username
@@ -117,9 +180,13 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   const handleExpand = async (id: number) => {
     const next = expandedId === id ? null : id;
     setExpandedId(next);
-    if (next !== null && !(next in commentsMap)) {
-      const res = await fetch(`/api/recommendations/${next}/comments`);
-      if (res.ok) { const data = await res.json(); setCommentsMap((p) => ({ ...p, [next]: data })); }
+    if (next !== null) {
+      if (!(next in commentsMap)) {
+        const res = await fetch(`/api/recommendations/${next}/comments`);
+        if (res.ok) { const data = await res.json(); setCommentsMap((p) => ({ ...p, [next]: data })); }
+      }
+      const rec = recs.find((r) => r.id === next);
+      if (rec?.tmdbId) fetchTrailer(next, rec.tmdbId);
     }
   };
 
@@ -211,6 +278,10 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
   };
 
   return (
+    <>
+    {trailerModal && (
+      <TrailerModal trailerKey={trailerModal.key} title={trailerModal.title} onClose={() => setTrailerModal(null)} />
+    )}
     <div className="page-enter shell" style={{ paddingTop: 32 }}>
       <SectionHeader
         eyebrow={`${recs.filter(r => !r.programada).length} películas en la cola`}
@@ -360,6 +431,17 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                         <Avatar {...suggester} size="sm" />
                         <span>{suggester.name}</span>
                       </div>
+                      {r.tmdbId && (
+                        <div style={{ marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => openTrailer(r.id, r.tmdbId, r.title)}
+                            style={{ fontSize: 11, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                          >
+                            ▶ Trailer
+                          </button>
+                        </div>
+                      )}
                       {!r.programada && r.suggestedBy === username && (
                         <div style={{ display: 'flex', gap: 6, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
                           <button
@@ -442,6 +524,23 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
                     </div>
 
                     <div className="wl-detail-meta">
+                      {r.tmdbId && (
+                        <div className="wl-detail-section">
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>Trailer</div>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => openTrailer(r.id, r.tmdbId, r.title)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                          >
+                            {trailerKeys[r.id] === undefined
+                              ? '▶ Ver trailer'
+                              : trailerKeys[r.id] === null
+                              ? 'Sin trailer disponible'
+                              : '▶ Ver trailer'}
+                          </button>
+                        </div>
+                      )}
+
                       <div className="wl-detail-section">
                         <div className="eyebrow" style={{ marginBottom: 6 }}>Sugirió</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -617,5 +716,6 @@ export default function WatchlistClient({ initialRecs, username, initialVotedIds
       </div>
       </div>
     </div>
+    </>
   );
 }
