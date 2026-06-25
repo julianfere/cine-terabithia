@@ -18,6 +18,7 @@ const links = [
   ['/watchlist', 'Sugeridos'],
   ['/votacion', 'Votación'],
   ['/ranking', 'Ranking'],
+  ['/trivia', 'Trivia'],
 ] as const;
 
 function IconTicket() {

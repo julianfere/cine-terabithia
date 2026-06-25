@@ -138,3 +138,62 @@ export const notificationLogs = pgTable('notification_logs', {
   failed: integer('failed').notNull().default(0),
   sentAt: bigint('sent_at', { mode: 'number' }).$defaultFn(() => Date.now()),
 });
+
+// --- Trivia ---
+
+export const triviaGames = pgTable('trivia_games', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  screeningId: integer('screening_id').references(() => screenings.id, { onDelete: 'set null' }),
+  status: text('status').notNull().default('draft'), // 'draft' | 'lobby' | 'active' | 'finished'
+  currentQuestionIndex: integer('current_question_index').notNull().default(-1),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: bigint('created_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+  startedAt: bigint('started_at', { mode: 'number' }),
+  finishedAt: bigint('finished_at', { mode: 'number' }),
+});
+
+export const triviaQuestions = pgTable('trivia_questions', {
+  id: serial('id').primaryKey(),
+  gameId: integer('game_id').references(() => triviaGames.id, { onDelete: 'cascade' }).notNull(),
+  order: integer('order').notNull().default(0),
+  text: text('text').notNull(),
+  type: text('type').notNull().default('open'), // 'multiple_choice' | 'open'
+  points: integer('points').notNull().default(1),
+  imageUrl: text('image_url'),
+});
+
+export const triviaOptions = pgTable('trivia_options', {
+  id: serial('id').primaryKey(),
+  questionId: integer('question_id').references(() => triviaQuestions.id, { onDelete: 'cascade' }).notNull(),
+  text: text('text').notNull(),
+  isCorrect: boolean('is_correct').notNull().default(false),
+  order: integer('order').notNull().default(0),
+});
+
+export const triviaTeams = pgTable('trivia_teams', {
+  id: serial('id').primaryKey(),
+  gameId: integer('game_id').references(() => triviaGames.id, { onDelete: 'cascade' }).notNull(),
+  name: text('name').notNull(),
+  color: text('color').notNull().default('#e46217'),
+});
+
+export const triviaTeamMembers = pgTable('trivia_team_members', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => triviaTeams.id, { onDelete: 'cascade' }).notNull(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+}, (t) => ({
+  uniqueMembership: unique().on(t.teamId, t.userId),
+}));
+
+export const triviaAnswers = pgTable('trivia_answers', {
+  id: serial('id').primaryKey(),
+  questionId: integer('question_id').references(() => triviaQuestions.id, { onDelete: 'cascade' }).notNull(),
+  teamId: integer('team_id').references(() => triviaTeams.id, { onDelete: 'cascade' }).notNull(),
+  optionId: integer('option_id').references(() => triviaOptions.id, { onDelete: 'set null' }), // null para preguntas open
+  isCorrect: boolean('is_correct').notNull().default(false),
+  pointsAwarded: integer('points_awarded').notNull().default(0),
+  answeredAt: bigint('answered_at', { mode: 'number' }).$defaultFn(() => Date.now()),
+}, (t) => ({
+  uniqueAnswer: unique().on(t.questionId, t.teamId),
+}));

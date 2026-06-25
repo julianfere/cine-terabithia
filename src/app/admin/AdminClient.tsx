@@ -31,7 +31,11 @@ export default function AdminClient({
   initialLogs: LogRow[];
   analyticsRows: AnalyticsRow[];
 }) {
-  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones' | 'entradas' | 'actividad'>('funciones');
+  const [tab, setTab] = useState<'funciones' | 'watchlist' | 'nueva' | 'usuarios' | 'notificaciones' | 'entradas' | 'actividad' | 'trivia'>('funciones');
+  const [triviaGames, setTriviaGames] = useState<{ id: number; name: string; status: string; createdAt: number | null }[]>([]);
+  const [triviaLoaded, setTriviaLoaded] = useState(false);
+  const [triviaCreating, setTriviaCreating] = useState(false);
+  const [triviaNewName, setTriviaNewName] = useState('');
   const [entrScreeningId, setEntrScreeningId] = useState<number | null>(null);
   const [entrAttendees, setEntrAttendees] = useState<AttendanceRow[]>([]);
   const [entrSearch, setEntrSearch] = useState('');
@@ -65,6 +69,34 @@ export default function AdminClient({
     title: '', year: '', director: '', genre: '', duration: '', synopsis: '',
     posterPath: null as string | null, tmdbId: null as string | number | null,
   });
+
+  // ── trivia helpers ────────────────────────────────────────────────────────
+
+  const loadTrivia = () => {
+    fetch('/api/trivia').then((r) => r.json()).then((data) => { setTriviaGames(data); setTriviaLoaded(true); });
+  };
+
+  const handleCreateTrivia = async () => {
+    if (!triviaNewName.trim()) return;
+    setTriviaCreating(true);
+    const res = await fetch('/api/trivia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: triviaNewName.trim() }),
+    });
+    if (res.ok) {
+      const game = await res.json();
+      setTriviaGames((prev) => [game, ...prev]);
+      setTriviaNewName('');
+    }
+    setTriviaCreating(false);
+  };
+
+  const handleDeleteTrivia = async (id: number) => {
+    if (!confirm('¿Eliminar este juego?')) return;
+    await fetch(`/api/trivia/${id}`, { method: 'DELETE' });
+    setTriviaGames((prev) => prev.filter((g) => g.id !== id));
+  };
 
   // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -474,10 +506,11 @@ export default function AdminClient({
             { key: 'usuarios' as const, label: 'Usuarios', count: userList.length },
             { key: 'notificaciones' as const, label: 'Notificaciones', count: subscribedUserIds.length },
             { key: 'actividad' as const, label: 'Actividad', count: analyticsRows.length },
+            { key: 'trivia' as const, label: 'Trivia', count: triviaGames.length },
           ]).map((item) => (
             <li
               key={item.key}
-              onClick={() => setTab(item.key)}
+              onClick={() => { setTab(item.key); if (item.key === 'trivia' && !triviaLoaded) loadTrivia(); }}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '10px 12px', borderRadius: 6, cursor: 'pointer', marginBottom: 2,
@@ -1479,6 +1512,75 @@ export default function AdminClient({
             </section>
           );
         })()}
+
+        {/* ── TRIVIA ── */}
+        {tab === 'trivia' && (
+          <section>
+            {pageHead('Admin / Trivia', 'Trivia')}
+
+            {/* Create new game */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 28 }}>
+              <input
+                style={{ flex: 1, background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', padding: '9px 12px', color: 'var(--ink)', fontSize: 14, fontFamily: 'inherit' }}
+                placeholder="Nombre del nuevo juego…"
+                value={triviaNewName}
+                onChange={(e) => setTriviaNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleCreateTrivia(); }}
+              />
+              <button
+                onClick={handleCreateTrivia}
+                disabled={triviaCreating || !triviaNewName.trim()}
+                style={{ background: 'var(--accent)', border: 'none', borderRadius: 'var(--radius)', padding: '9px 18px', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap', opacity: triviaCreating || !triviaNewName.trim() ? 0.6 : 1 }}
+              >
+                {triviaCreating ? '…' : '+ Crear trivia'}
+              </button>
+            </div>
+
+            {triviaGames.length === 0 && triviaLoaded && (
+              <div style={{ textAlign: 'center', color: 'var(--ink-mute)', padding: '40px 0', fontSize: 14 }}>
+                No hay juegos creados todavía.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {triviaGames.map((game) => {
+                const statusColors: Record<string, string> = { draft: 'var(--ink-mute)', lobby: 'var(--warm)', active: 'var(--accent)', finished: '#50c878' };
+                const statusLabels: Record<string, string> = { draft: 'Borrador', lobby: 'Lobby', active: 'En juego', finished: 'Finalizado' };
+                return (
+                  <div key={game.id} style={{ background: 'var(--bg-elev)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{game.name}</div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: statusColors[game.status] ?? 'var(--ink-mute)', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>
+                        {statusLabels[game.status] ?? game.status}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Link
+                        href={`/admin/trivia/${game.id}/edit`}
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-mute)', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', textDecoration: 'none', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}
+                      >
+                        Editar
+                      </Link>
+                      <Link
+                        href={`/admin/trivia/${game.id}`}
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: game.status === 'active' ? '#fff' : 'var(--accent)', background: game.status === 'active' ? 'var(--accent)' : 'transparent', border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', textDecoration: 'none', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}
+                      >
+                        {game.status === 'active' ? '🔴 Moderar' : 'Moderar'}
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteTrivia(game.id)}
+                        style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '5px 10px', color: 'var(--hot)', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
       </main>
 
       {/* ═══ MODAL: Quick create ═══════════════════════════════════════════ */}
